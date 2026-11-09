@@ -252,7 +252,8 @@ def test_cards_carry_engine_and_prewarm_respects_the_daily_cap(fresh):
         g = json.load(fh)
     assert c["BBB"]["engine"]["quality"] == {"score": g["quality"]["score"], "level": g["quality"]["level"]}
     assert c["BBB"]["engine"]["price_score"] == {"score": g["price_attractiveness"]["score"],
-                                                 "level": g["price_attractiveness"]["level"]}
+                                                 "level": g["price_attractiveness"]["level"],
+                                                 "reason": g["price_attractiveness"].get("reason")}
     # Al día siguiente hay cupo nuevo: CCC entra (y falla); la lista guardada no lleva `engine`.
     assert trending.prewarm(trending._state["data"], today="2099-01-01") == 1
     ccc = _wait(lambda: (e := _cards(trending.get())["CCC"]["engine"] or {}).get("status") == "fallo" and e)

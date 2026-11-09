@@ -113,9 +113,11 @@ def test_tech_table_with_reading_pills_and_missing_rows(aapl):
     rows = list(aapl["display"]["sections"]["valuation"]["rows"][:4])
     rows.append({"key": "x", "label": "Métrica sin dato", "state": "sin_dato", "value": None,
                  "text": "la fuente no la publica"})
-    pdf, _ = _render(P.tech_table(rows, T.CW, meaning=lambda k, l: "Cuántas veces el beneficio" if k == "pe" else None))
+    pdf, _ = _render(P.tech_table(rows, T.CW, meaning=lambda k, l: "Cuántas veces el beneficio" if k == "pe_l1" else None))
     t = _text(pdf)
-    assert "P/E (TTM)" in t and "Prima elevada" in t and "Cuántas veces el beneficio" in t   # F10 · N2: frente a sus pares
+    # cierre de la 1.0: la fila del P/E es la de la regla L1 (el TTM solo va en la tabla de rivales)
+    assert "P/E (12 meses)" in t and "P/E (TTM)" not in t and "Valoración alta" in t and "Cuántas veces el beneficio" in t
+    assert "Prima elevada" in t                                                              # F10 · N2: frente a sus pares
     assert "Sin dato" in t and "la fuente no la publica" in t
 
 

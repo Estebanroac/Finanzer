@@ -43,9 +43,7 @@ export default function Conclusion({ analysis: a, symbol }: PageProps) {
             <h4>{cap(comp.price.title)} <span className={`num tone-${toVTone(comp.price.tone)}`}>{comp.price.score ?? "—"}/100</span>{comp.price.level && ` · ${comp.price.level}`}</h4>
             <ul className="comp fill">{comp.price.rows.map((r) => (
               <li key={r.label}><span>{r.label}</span>
-                <span className="comp-bar signed"><i className={`tone-bg-${toVTone(r.tone)}`} style={{
-                  width: `${(Math.abs(r.value) / comp.price.signed_max) * 50}%`, [r.value < 0 ? "right" : "left"]: "50%" }} /></span>
-                <span className="num">{r.value > 0 ? `+${r.value}` : r.value < 0 ? `−${Math.abs(r.value)}` : "0"}</span></li>
+                <span className="num">{r.text}</span></li>
             ))}</ul>
             {comp.price.note && <p className="muted small">{comp.price.note}</p>}
           </div>

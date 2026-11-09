@@ -124,7 +124,9 @@ def test_summary_has_same_figures_as_the_page(sym):
         assert s["metrics"][k] == {"value": item["value"], "value_txt": item["value_txt"]}
     assert s["symbol"] == sym and s["name"] == a["profile"]["name"] and s["price"] == a["price"]
     assert s["quality"] == {"score": a["quality"]["score"], "level": a["quality"]["level"]}
-    assert s["price_score"] == {"score": a["price_attractiveness"]["score"], "level": a["price_attractiveness"]["level"]}
+    # cierre de la 1.0: con el motivo de que no haya nota (la tabla de rivales dice «sin nota» y el porqué)
+    assert s["price_score"] == {"score": a["price_attractiveness"]["score"], "level": a["price_attractiveness"]["level"],
+                                "reason": a["price_attractiveness"].get("reason")}
     assert s["consistency"] == a["verdict"]["consistency"]
     assert s["metrics"]["market_cap"]["value"] == a["profile"]["market_cap"]
     assert len(json.dumps(s)) < 3000                       # compacto: no el análisis entero (memoria)

@@ -50,6 +50,11 @@ L1_LEVEL_TEXT = {"atractivo": "valoración baja frente a su sector", "razonable"
 PRICE_DISCLAIMER = "describe el precio de hoy frente a su sector; no anticipa la rentabilidad"
 
 
+def _is_l1(a) -> bool:
+    """Versión 1.0: el precio es la regla L1 (lib/precio_l1.py); el bloque de múltiplos y el DCF son lectura."""
+    return ((a or {}).get("price_attractiveness") or {}).get("rule") == "L1"
+
+
 def price_level_short(level):
     """«baja» / «en línea» / «alta» para la tarjeta de la regla L1; otro nivel, tal cual."""
     return L1_LEVEL_SHORT.get(level, level)
@@ -87,6 +92,41 @@ def l1_note(pa):
     if pa.get("reason") and not pa.get("abstained"):
         return f"Precio sin veredicto: {pa['reason']}{warn}"
     return None
+
+
+def l1_group_name(pa) -> str:
+    """El grupo con el que se compara el múltiplo de la regla L1, en español: «tecnología», «bancos y aseguradoras»,
+    «todo el universo»…"""
+    pa = pa or {}
+    if pa.get("median_scope") == "mercado":
+        return "todo el universo"
+    grp = pa.get("group") or pa.get("gics_sector") or ""
+    return L1_GROUP_ES.get(grp) or GICS_ES.get(grp, grp or "su sector")
+
+
+def l1_metric_label(pa) -> str:
+    """Cierre de la 1.0: el nombre del múltiplo de la regla L1 cuando se muestra la cifra («P/E normalizado (12 meses)»;
+    en los REIT, «P/FFO (12 meses)»). Es el único P/E del informe; el TTM solo va en la tabla de rivales."""
+    met = (pa or {}).get("metric") or "P/E"
+    return f"{met} normalizado (12 meses)" if met == "P/E" and (pa or {}).get("normalized") else f"{met} (12 meses)"
+
+
+def l1_rows(pa) -> List[Dict[str, Any]]:
+    """Cierre de la 1.0 (9-nov-2026): las filas de la composición de la nota de precio con la regla L1 (portada,
+    conclusión y web): el múltiplo, la mediana de su grupo y el tercio del universo. Sin puntos del sistema anterior."""
+    pa = pa or {}
+    if pa.get("pe_ttm") is None or pa.get("sector_median") is None:
+        return [{"label": l1_metric_label(pa), "kind": "fact", "text": "sin dato",
+                 "detail": pa.get("reason")}]
+    rows = [{"label": l1_metric_label(pa), "short": f"{pa.get('metric') or 'P/E'} normalizado"
+             if (pa.get("metric") or "P/E") == "P/E" and pa.get("normalized") else (pa.get("metric") or "P/E"),
+             "kind": "fact", "text": f"{pa['pe_ttm']:.1f}x"},
+            {"label": f"Mediana de {l1_group_name(pa)}", "short": "Mediana de su grupo", "kind": "fact",
+             "text": f"{pa['sector_median']:.1f}x"}]
+    if pa.get("level") in L1_LEVEL_SHORT:
+        rows.append({"label": "Tercio del universo", "kind": "fact",
+                     "text": {"atractivo": "más bajo", "razonable": "central", "exigente": "más alto"}[pa["level"]]})
+    return rows
 
 
 def category_label(key: str) -> str:
@@ -179,6 +219,13 @@ def _declare_engine_texts(a, D):
             cl = _metric_claims(a, it.get("metric"))
             _record(it.get("reason"), *cl, source="display.desglose")
             _record(it.get("value"), *cl, source="display.desglose")
+    # cierre de la 1.0: con la regla L1 la Valoración no sale en el desglose, pero sus textos (P/B frente al ROE, P/FFO…)
+    # siguen en la sección de valoración y en el resumen: se declaran desde el motor
+    if _is_l1(a):
+        for it in (((a.get("score") or {}).get("breakdown") or {}).get("Valoración") or {}).get("adjustments") or []:
+            cl = _metric_claims(a, it.get("metric"))
+            _record(it.get("reason"), *cl, source="display.desglose")
+            _record(_es_value(it.get("value", "")), *cl, source="display.desglose")
     alt = a.get("altman_z") or {}
     for c in (S.get("institutional") or {}).get("cards") or []:
         if c.get("key") == "altman":
@@ -1509,7 +1556,10 @@ def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             if (a.get("dcf") or {}).get("not_significant") and adj is not None
             else "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción"
             if adj is not None else "Contraste del DCF directo: no puntúa")
-    if adj is not None:
+    if _is_l1(a):
+        # Cierre de la 1.0 (9-nov-2026): el precio es la regla L1; el DCF inverso es lectura y no aporta puntos
+        role = role.replace("del veredicto", "de la lectura de valoración") + "."
+    elif adj is not None:
         role += f" (aporta {adj['adjustment']:+d} puntos a Valoración)."
     else:
         role += "."
@@ -1755,6 +1805,17 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _thkey = _vb.get("thresholds_key") or (a.get("sector_info") or {}).get("mapped_sector") or "default"
     _th = SECTOR_THRESHOLDS.get(_thkey, ThresholdConfig())
     r_roe = read_roe(km.get("roe"), km.get("roa"), _th, market=_mkt, period=numfmt.period(_ttm_basis))
+    # Cierre de la 1.0 (9-nov-2026, CIEN): el texto lee el ROE con las bandas del score de su sector y la tabla lo compara
+    # con la referencia de la industria. Si las dos lecturas apuntan en sentidos opuestos («competitivo» frente a
+    # «Inferior»), el texto dice también la segunda: una métrica no sale como fortaleza en el texto y floja en la tabla.
+    _roe_vs = (_rvs("ROE", km.get("roe"), sector_bench.get("roe"), True, "pct")
+               if (r_roe and km.get("roe") is not None and sector_bench.get("roe")) else None)
+    if _roe_vs and ((r_roe[1] in ("pos", "neu") and _roe_vs[1] in ("warn", "neg"))
+                    or (r_roe[1] in ("warn", "neg") and _roe_vs[1] == "pos")):
+        _side = ("por encima" if _roe_vs[1] == "pos" else
+                 "muy por debajo" if _roe_vs[1] == "neg" else "por debajo")
+        r_roe = (r_roe[0], r_roe[1], f"{r_roe[2]}; frente a la referencia {_ref} ({_pct(sector_bench['roe'])}), en "
+                                     f"cambio, queda {_side} ({_roe_vs[3]})")
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
     # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF no puntúa.
     _rel = dcf.get("reliability") or {}
@@ -1871,7 +1932,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                           bench=sector_bench.get("pe"),
                           ref=_ref, higher_better=False),
              _claim("spread", field="key_metrics.roic_wacc_spread", value=km.get("roic_wacc_spread")))
-        _rec(r_roe, _claim("figure", field="key_metrics.roe", value=km.get("roe"), fmt="pct"))
+        _rec(r_roe, _claim("figure", field="key_metrics.roe", value=km.get("roe"), fmt="pct"),
+             *(_vs_claims("ROE", km.get("roe"), sector_bench.get("roe"), True, ref=_ref)
+               if (_roe_vs and "en cambio, queda" in r_roe[2]) else []))
         _rec(r_spread, _claim("spread", field="key_metrics.roic_wacc_spread", value=km.get("roic_wacc_spread")))
         _rec(r_up, _claim("dcf_upside", field="dcf.upside", value=dcf.get("upside")),
              _claim("dcf_rel", field="dcf.reliability.level", value=_rel.get("level")))
@@ -2059,6 +2122,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if norm.get("differs"):
         _rep = {_PE: _PE.replace("P/E", "P/E reportado"), "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
         kpis = [(v, _rep.get(l, l), k, r) for v, l, k, r in kpis]
+    # Cierre de la 1.0 (9-nov-2026): un solo P/E en el informe, el normalizado de doce meses de la regla L1 (en los REIT,
+    # su P/FFO). Sustituye al P/E reportado (TTM) de las cifras clave; el TTM queda solo en la tabla de rivales.
+    _l1_key = ("pe" if (_pa.get("metric") or "P/E") == "P/E" else "p_ffo") if _is_l1(a) else None
+    if _l1_key and _pa.get("pe_ttm") is not None:
+        kpis = [(fv(_pa["pe_ttm"], "mult"), l1_metric_label(_pa), "pe_l1", _pa["pe_ttm"]) if k == _l1_key
+                else (v, l, k, r) for v, l, k, r in kpis]
 
     # "Lo esencial" (fortaleza clave · a vigilar · contexto), desde señales
     _S = alerts.get("strengths") or []
@@ -2200,6 +2269,17 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _val_cards = [_mkcard("pe", _PE, km.get("pe"), 'mult', "pe", False),
                       _mkcard("fcf_yield", "FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
                       _mkcard("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
+    if _l1_key and _pa.get("pe_ttm") is not None:
+        # Cierre de la 1.0: la tarjeta del múltiplo de la L1, comparada con la mediana de su grupo (no con la industria)
+        _v1, _u1 = _mvu(_pa["pe_ttm"], "mult")
+        _rel1 = _pa.get("relative")
+        _val_cards = [{"key": "pe_l1", "label": l1_metric_label(_pa), "value": _v1, "unit": _u1,
+                       "pill": f"Valoración {price_level_short(_pa.get('level'))}" if _pa.get("level") else "—",
+                       "tone": p_tone if _pa.get("level") else 'neu',
+                       "delta": f"{(_rel1 - 1) * 100:+.0f}%" if _rel1 is not None else "",
+                       "bench": (f"vs mediana de su grupo {fv(_pa['sector_median'], 'mult')}"
+                                 if _pa.get("sector_median") is not None else ""),
+                       "state": "con_dato"} if c["key"] == _l1_key else c for c in _val_cards]
     cards = [
         # Etapa 9b: la cifra que puntúa Crecimiento, con su etiqueta (no el interanual de la fuente).
         (_mkcard("revenue_growth", "Retorno total (3 años)", g_rev, 'pct', None, True) if archetype == "REIT" else
@@ -2299,6 +2379,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         exec_items.append(("CRECIMIENTO Y RETORNO", _gro))
     # Precio: la lectura del múltiplo primario del arquetipo y la del DCF
     _r_val = (_r_pe_short or r_pe) if "pe" not in _na_keys else None
+    if _is_l1(a) and _r_val is not None:     # cierre de la 1.0: un solo P/E, el de la regla L1, donde antes iba el TTM
+        _r_val = (None, None, l1_note(_pa)) if (_pa.get("level") and l1_note(_pa)) else None
     _branch_val = next((x for x in (breakdown.get("Valoración") or {}).get("adjustments") or []
                         if x.get("metric") in BRANCH_METRICS), None)
     if _r_val is None and _branch_val:
@@ -2308,7 +2390,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         # Fase 3 (T4): en un banco o una aseguradora manda el P/B frente a su retorno (método intrínseco); el P/E,
         # que sí le aplica (registro #14), va detrás.
         _val = join_sentences([cap(f"{_clean_metric(_branch_val['metric'])}: {_branch_val['reason']}"),
-                               cap(r_pe[2]) if (r_pe and "pe" not in _na_keys) else None])
+                               ((cap(l1_note(_pa)) if _pa.get("level") and l1_note(_pa) else None)
+                                if _is_l1(a) else cap(r_pe[2])) if (r_pe and "pe" not in _na_keys) else None])
     if _val.strip():
         exec_items.append((PRICE_TITLE, _val))
     _ctx = " ".join(filter(None, [cap(r_52[2]) if r_52 else None, cap(r_beta[2]) if r_beta else None]))
@@ -2333,7 +2416,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             _qrows.append({"label": category_label(n), "kind": "bar", "value": c.get("score", 0), "max": _mx, "pct": _cpct,
                            "tone": category_tone(_cpct)})
     _prows = []
-    for adj in (breakdown.get("Valoración") or {}).get("adjustments") or []:
+    # Cierre de la 1.0 (9-nov-2026): con la regla L1, la nota de precio se explica con sus propias cifras (el múltiplo,
+    # la mediana de su grupo y el tercio); el bloque de múltiplos y el DCF inverso del sistema anterior no la forman.
+    _l1_rows = l1_rows(_pa) if _pa.get("rule") == "L1" else None
+    for adj in ([] if _pa.get("rule") == "L1" else (breakdown.get("Valoración") or {}).get("adjustments") or []):
         if adj.get("metric") in ("No aplica", "Cobertura") or not isinstance(adj.get("adjustment"), int) \
                 or adj.get("in_block"):     # los miembros del bloque puntúan a través del bloque
             continue
@@ -2346,7 +2432,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                                 else _persist_short),
                     "rows": _qrows},
         "price": {"title": PRICE_TITLE, "score": p_score, "level": price_level_short(p_level), "tone": p_tone,
-                  "note": price_note, "rows": _prows,
+                  "note": price_note, "rows": _l1_rows if _l1_rows is not None else _prows,
                   "signed_max": max(cfg("thresholds.score.valoracion.multiples_block_max_by_members"))},
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: " + contraction_text() + ".",
     }
@@ -2363,7 +2449,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                                if (a.get("credit_risk") or {}).get("status") == "no_medido" else None)}}
 
     # ════════════════ 01 VALORACIÓN ════════════════
-    val_txt = join_sentences([r_pe[2] if r_pe else None, r_fcfy[2] if r_fcfy else None,
+    val_txt = join_sentences([r_pe[2] if (r_pe and not _is_l1(a)) else None, r_fcfy[2] if r_fcfy else None,
                               r_graham[2] if r_graham else None])
     if not val_txt:   # la rama del arquetipo (P/B justificado, P/FFO, normalizados…)
         _bv = [x for x in (breakdown.get("Valoración") or {}).get("adjustments") or []
@@ -2405,6 +2491,18 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _mult_na = {"pe": "pe", "earnings_yield": "pe", "forward_pe": "forward_pe", "peg": "peg",
                 "ev_ebitda": "ev_ebitda", "pfcf": "p_fcf", "fcf_yield": "p_fcf"}
     mrows = []
+    # Cierre de la 1.0 (9-nov-2026): un solo P/E en el informe, el de la regla L1. Su fila se compara con la mediana de
+    # su grupo (la referencia de la regla), no con la industria; el E/P (inverso del P/E TTM) no se repite.
+    _l1_row = None
+    if _is_l1(a) and (_pa.get("metric") or "P/E") == "P/E" and _pa.get("pe_ttm") is not None:
+        _rel1 = _pa.get("relative")
+        _l1_row = _row("pe_l1", l1_metric_label(_pa), fv(_pa["pe_ttm"], "mult"),
+                       f"Valoración {price_level_short(_pa['level'])}" if _pa.get("level") else "—",
+                       p_tone if _pa.get("level") else None, "con_dato",
+                       fv(_pa.get("sector_median"), "mult") if _pa.get("sector_median") is not None else "—",
+                       f"{(_rel1 - 1) * 100:+.0f}%" if _rel1 is not None else "—",
+                       text=f"Referencia: la mediana de {l1_group_name(_pa)} en el universo, según la regla L1, no la industria")
+        mult_defs = [m for m in mult_defs if m[0] != "earnings_yield"]
     for key, lab, val, bench, hb, fm in mult_defs:
         bstr = fv(bench, fm) if bench else "—"
         if key == "pe" and km.get("pe_basis") == "operativo_negativo" and _mult_na.get(key) not in _na_keys:
@@ -2436,6 +2534,13 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         mrows.append(_row(key, lab, numfmt.ev_ebitda(val) if (key == "ev_ebitda" and val is not None) else fv(val, fm),
                           r[0] if r else "—", r[1] if r else None, state, bstr, r[3] if r else "—",
                           _txt if _txt or key != "ev_ebitda" else numfmt.ev_ebitda_detail(val)))
+    # cierre de la 1.0: la fila del P/E TTM se calcula como antes, pero solo la usa la tabla de rivales (su columna
+    # «P/E (TTM)»); en la tabla de múltiplos va la de la regla L1
+    _pe_ttm_row = next((r for r in mrows if r["key"] == "pe"), None)
+    if _l1_row is not None:
+        mrows = [_l1_row if r["key"] == "pe" else r for r in mrows]
+        if _pe_ttm_row is None:
+            mrows.insert(0, _l1_row)
     for adj in (breakdown.get("Valoración") or {}).get("adjustments") or []:
         if adj.get("metric") in BRANCH_METRICS:
             lab_r, tone_r = _SEV_READ.get(adj.get("severity"), ("—", 'neu'))
@@ -2465,7 +2570,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         else:
             mrows.append(_row("affo", "AFFO (por acción)", "—", "Sin dato", 'neu', "sin_dato", "—", "—",
                               _rf.get("affo_reason")))
-    if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys:
+    if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys \
+            and _l1_row is None:
         mrows.append(_row("pe_normalized", "P/E normalizado", fv(norm["pe_normalized"], "mult"),
                           "Sin no recurrentes", None, "con_dato", "—", "—"))
     market_note = None
@@ -2628,11 +2734,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             if _rel["level"] == "baja" and _dcf_adj is not None and \
                     str(_dcf_adj.get("reason") or "").startswith("El DCF directo tiene fiabilidad baja"):
                 # Fase 3 (T3, §2.3): el DCF inverso sustituye al directo como método intrínseco.
-                _rl += (". El DCF directo tiene fiabilidad baja: el método intrínseco es el DCF inverso, que "
-                        f"aporta {_dcf_adj['adjustment']:+d} puntos a Valoración.")
+                _rl += (". El DCF directo tiene fiabilidad baja: el método intrínseco es el DCF inverso"
+                        + (", que se lee sin puntuar (el precio es la regla L1)." if _is_l1(a) else
+                           f", que aporta {_dcf_adj['adjustment']:+d} puntos a Valoración."))
             elif _rel["level"] == "baja":
                 _rl += ". " + DCF_LOW + "."
-            elif _dcf_adj is not None:
+            elif _dcf_adj is not None and not _is_l1(a):
                 _cap_pts = (cfg("thresholds.score.valoracion.dcf_points_high") if _rel["level"] == "alta"
                             else cfg("thresholds.score.valoracion.dcf_points_medium"))[0]
                 _rl += (f". Aporta {_dcf_adj['adjustment']:+d} puntos a Valoración "
@@ -2766,7 +2873,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _dcf_truth = None
     if _rel.get("level") == "baja":
         _dcf_truth = "El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia"
-        if _dcf_score is not None:
+        if _dcf_score is not None and not _is_l1(a):     # cierre de la 1.0: con la L1 el DCF inverso no puntúa
             _dcf_truth += (f"; en Valoración puntúa el {_clean_metric(_dcf_score['metric']).split(' (')[0]} "
                            f"({_dcf_score['adjustment']:+d} puntos)".replace("-", "−"))
     if _cons.get("level"):
@@ -2859,6 +2966,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                               + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
     valuation = {"intro": val_txt, "columns": ["MÚLTIPLO", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
                  "rows": mrows, "market_note": market_note,
+                 # cierre de la 1.0: la fila del P/E TTM, solo para la columna «P/E (TTM)» de la tabla de rivales
+                 "pe_ttm_row": _pe_ttm_row if _l1_row is not None else None,
                  "reference_note": join_sentences([reference_note, _nr_txt]) if _nr_txt else reference_note,
                  "normalization_note": norm_note,
                  "intrinsic": {"intro": iv_txt, "rows": iv_rows, "graham_note": graham_note},
@@ -3314,8 +3423,19 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                     "máximo "
                     + " / ".join(f"±{m} con {i + 1}{'+' if i == 2 else ''}" for i, m in enumerate(_mx))
                     + " miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque).")
+        if _is_l1(a):
+            # Cierre de la 1.0 (9-nov-2026): el precio es la regla L1; la Valoración /20 del sistema anterior (bloque de
+            # múltiplos, DCF inverso y su P/E normalizado) no se muestra aquí: su lectura va en «Lectura de valoración»
+            # y en «Cuánto vale», sin puntos.
+            bd_intro = ("Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o "
+                        "resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias "
+                        "y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la "
+                        "puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla "
+                        "L1 (" + contraction_text() + ").")
         bd_cats = []
         for cat_name, cat in breakdown.items():
+            if _is_l1(a) and cat_name in cfg("thresholds.score.price.categories"):
+                continue
             cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
             pctc = cs / cm * 100
             conclusive = cat.get("conclusive") is not False
@@ -3397,8 +3517,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                            + annex_conf + official_source_annex(a)
                            + [r for r in (provenance_annex(a),) if r]
                            # V7 (M4): la fórmula de los bloques de múltiplos (la lectura del lector va en su fila)
+                           # cierre de la 1.0: con la regla L1 el bloque no forma la nota de precio: no se cita
                            + [{"label": "Fórmula del bloque", "text": x["formula"]}
-                              for x in (breakdown.get("Valoración") or {}).get("adjustments") or [] if x.get("formula")]
+                              for x in (breakdown.get("Valoración") or {}).get("adjustments") or [] if x.get("formula")
+                              and not _is_l1(a)]
                            + [r for r in (_source_names_annex(a, _ind),) if r]},
         # V7 (nombres en español): sector e industria del perfil en español para la prosa y las fichas; el original,
         # en el anexo

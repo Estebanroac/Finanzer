@@ -3530,9 +3530,9 @@
      "state": "con_dato"
     },
     {
-     "key": "pe",
-     "label": "P/E",
-     "value": "17.61x",
+     "key": "pe_l1",
+     "label": "P/E normalizado (12 meses)",
+     "value": "20.23x",
      "state": "con_dato"
     },
     {
@@ -3623,14 +3623,14 @@
      "state": "con_dato"
     },
     {
-     "key": "pe",
-     "label": "P/E",
-     "value": "17.61",
+     "key": "pe_l1",
+     "label": "P/E normalizado (12 meses)",
+     "value": "20.23",
      "unit": "x",
-     "pill": "Descuento",
-     "tone": "pos",
-     "delta": "-13%",
-     "bench": "vs industria 20.24x",
+     "pill": "Valoración en línea",
+     "tone": "neu",
+     "delta": "-1%",
+     "bench": "vs mediana de su grupo 20.52x",
      "state": "con_dato"
     },
     {
@@ -3679,7 +3679,7 @@
     },
     {
      "label": "VALORACIÓN FRENTE A SU SECTOR",
-     "text": "El mercado paga 20.3x el beneficio normalizado (sin partidas no recurrentes), un +0% frente a la referencia de su industria sin ella (20.2x); el P/E reportado (17.6x) no es fiable: el 13% del beneficio es no recurrente."
+     "text": "P/E 20.2x (sin partidas no recurrentes) frente a la mediana de servicios públicos (20.5x), 0.99 veces: en el tercio central del universo."
     },
     {
      "label": "CONTEXTO DE MERCADO",
@@ -3740,22 +3740,21 @@
      "note": "P/E 20.2x (sin partidas no recurrentes) frente a la mediana de servicios públicos (20.5x), 0.99 veces: en el tercio central del universo.",
      "rows": [
       {
-       "label": "Rentabilidad por dividendo (utility) · 3.18%",
-       "kind": "signed",
-       "value": 0,
-       "tone": "neu"
+       "label": "P/E normalizado (12 meses)",
+       "short": "P/E normalizado",
+       "kind": "fact",
+       "text": "20.2x"
       },
       {
-       "label": "Bloque de múltiplos · 2 múltiplos",
-       "kind": "signed",
-       "value": 0,
-       "tone": "neu"
+       "label": "Mediana de servicios públicos",
+       "short": "Mediana de su grupo",
+       "kind": "fact",
+       "text": "20.5x"
       },
       {
-       "label": "P/B frente al ROE regulado · exigente",
-       "kind": "signed",
-       "value": -2,
-       "tone": "neg"
+       "label": "Tercio del universo",
+       "kind": "fact",
+       "text": "central"
       }
      ],
      "signed_max": 6
@@ -3845,10 +3844,6 @@
     {
      "label": "Procedencia de los datos (campos del análisis por fuente)",
      "text": "estados de Yahoo (yfinance): 36 campos; SEC EDGAR: 2 (country, beneficio operativo); Finnhub: 8 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 2 (BPA estimado, caja total)."
-    },
-    {
-     "label": "Fórmula del bloque",
-     "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.00 × 2 (máximo con 1) = +0.0, redondeado a +0."
     },
     {
      "label": "Nombres originales de las fuentes",
@@ -3956,7 +3951,7 @@
     "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLU)."
    },
    "valuation": {
-    "intro": "El mercado paga 20.3x el beneficio normalizado (sin partidas no recurrentes), un +0% frente a la referencia de su industria sin ella (20.2x); el P/E reportado (17.6x) no es fiable: el 13% del beneficio es no recurrente. Cotiza 50% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
+    "intro": "Cotiza 50% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
     "columns": [
      "MÚLTIPLO",
      "EMPRESA",
@@ -3966,15 +3961,15 @@
     ],
     "rows": [
      {
-      "key": "pe",
-      "label": "P/E (TTM)",
-      "value": "17.61x",
-      "bench": "20.24x",
-      "gap": "—",
-      "reading": "No fiable (13% no recurrente)",
-      "tone": "warn",
+      "key": "pe_l1",
+      "label": "P/E normalizado (12 meses)",
+      "value": "20.23x",
+      "bench": "20.52x",
+      "gap": "-1%",
+      "reading": "Valoración en línea",
+      "tone": "neu",
       "state": "con_dato",
-      "text": null
+      "text": "Referencia: la mediana de servicios públicos en el universo, según la regla L1, no la industria."
      },
      {
       "key": "forward_pe",
@@ -4054,17 +4049,6 @@
       "text": "su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda."
      },
      {
-      "key": "earnings_yield",
-      "label": "Earnings Yield (E/P)",
-      "value": "5.68%",
-      "bench": "—",
-      "gap": "—",
-      "reading": "—",
-      "tone": null,
-      "state": "con_dato",
-      "text": null
-     },
-     {
       "key": "dividend_yield",
       "label": "Dividend Yield",
       "value": "3.18%",
@@ -4085,20 +4069,20 @@
       "tone": "neu",
       "state": "con_dato",
       "text": "En línea para una utility (3.2%; bandas ≥5% / ≥4% / ≥3% / ≥2%)"
-     },
-     {
-      "key": "pe_normalized",
-      "label": "P/E normalizado",
-      "value": "20.27x",
-      "bench": "—",
-      "gap": "—",
-      "reading": "Sin no recurrentes",
-      "tone": null,
-      "state": "con_dato",
-      "text": null
      }
     ],
     "market_note": null,
+    "pe_ttm_row": {
+     "key": "pe",
+     "label": "P/E (TTM)",
+     "value": "17.61x",
+     "bench": "20.24x",
+     "gap": "—",
+     "reading": "No fiable (13% no recurrente)",
+     "tone": "warn",
+     "state": "con_dato",
+     "text": null
+    },
     "reference_note": "Referencia: industria «Electricidad»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 46 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin NextEra Energy, que pesa el 16 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En margen bruto, la mediana de 19 pares del universo, no el agregado. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
     "normalization_note": "Beneficio TTM (4 trimestres): reportado $9.30B, normalizado $8.08B (no recurrentes 13.1% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $231.02M netos; beneficio que la operación no explica después de impuestos (después de impuestos, confianza alta): $987.71M netos). El score usa el beneficio normalizado. P/E reportado 17.61x no fiable; P/E normalizado 20.27x. El beneficio supera lo que explica la operación en $188.48M antes de impuestos y $236.03M después de impuestos sin una partida que lo nombre (participadas, beneficio fiscal puntual, ganancias de inversiones…): no se recorta, y la confianza lo tiene en cuenta.",
     "intrinsic": {
@@ -4689,7 +4673,7 @@
      }
     ],
     "breakdown": {
-     "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque).",
+     "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura).",
      "coverage_notes": [],
      "categories": [
       {
@@ -4787,74 +4771,6 @@
          "sign": "n/a",
          "tone": "neu",
          "reason": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)",
-         "in_block": false,
-         "state": "no_aplica"
-        }
-       ]
-      },
-      {
-       "key": "Valoración",
-       "name": "Valoración",
-       "score": 8,
-       "max": 20,
-       "pct": 40.0,
-       "tone": "warn",
-       "conclusive": true,
-       "score_txt": "8 / 20",
-       "group": "price",
-       "text": null,
-       "items": [
-        {
-         "metric": "Rentabilidad por dividendo (utility)",
-         "value": "3.18%",
-         "sign": "0",
-         "tone": "neu",
-         "reason": "En línea para una utility (3.2%; bandas ≥5% / ≥4% / ≥3% / ≥2%)",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "P/E normalizado frente al sector",
-         "value": "20.27x",
-         "sign": "(0)",
-         "tone": "neu",
-         "reason": "En línea (20.3x frente a 20.2x)",
-         "in_block": true,
-         "state": "con_dato"
-        },
-        {
-         "metric": "Forward P/E",
-         "value": "18.40x",
-         "sign": "(0)",
-         "tone": "neu",
-         "reason": "Sin compresión del P/E normalizado (20x → 21x forward creíble); forward 18.4x (implica +10% de BPA); con el crecimiento que respalda su histórico (-3% del BPA en el último ejercicio), 20.8x.",
-         "in_block": true,
-         "state": "con_dato"
-        },
-        {
-         "metric": "Bloque de múltiplos",
-         "value": "2 múltiplos",
-         "sign": "0",
-         "tone": "neu",
-         "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.00 → +0.00): +0.00, que suma +0.0 puntos de un máximo de ±2.",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "P/B frente al ROE regulado",
-         "value": "exigente",
-         "sign": "-2",
-         "tone": "warn",
-         "reason": "El precio descuenta un ROE sostenido del 15.8%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "No aplica",
-         "value": "P/FCF, EV/EBITDA, PEG",
-         "sign": "n/a",
-         "tone": "neu",
-         "reason": "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)",
          "in_block": false,
          "state": "no_aplica"
         }
@@ -5746,23 +5662,6 @@
     },
     "multiples": [
      {
-      "key": "pe",
-      "label": "P/E (TTM)",
-      "higher_is_better": false,
-      "fmt": "mult",
-      "state": "con_dato",
-      "text": null,
-      "value": 17.611236572265625,
-      "value_txt": "17.61x",
-      "bench": 20.23896957566135,
-      "bench_txt": "20.24x",
-      "gap_txt": null,
-      "gap_pct": -12.983531565538502,
-      "reading": "No fiable (13% no recurrente)",
-      "tone": "warn",
-      "role": "block"
-     },
-     {
       "key": "forward_pe",
       "label": "Forward P/E",
       "higher_is_better": false,
@@ -5777,7 +5676,7 @@
       "gap_pct": null,
       "reading": "—",
       "tone": null,
-      "role": "block"
+      "role": "informative"
      },
      {
       "key": "pb",
@@ -5833,12 +5732,7 @@
       "role": "informative"
      }
     ],
-    "block": {
-     "label": "Bloque de múltiplos",
-     "sign": "0",
-     "tone": "neu",
-     "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.00 → +0.00): +0.00, que suma +0.0 puntos de un máximo de ±2."
-    },
+    "block": null,
     "scored": [],
     "dcf_composition": null
    },

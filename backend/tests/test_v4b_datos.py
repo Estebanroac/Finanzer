@@ -34,7 +34,9 @@ def panel(outputs_by_env):
     ("SNOW", "net_margin", "aún sin beneficio"),           # crecimiento sin beneficio
 ])
 def test_a_not_applicable_row_says_why(panel, sym, key, why):
-    r = _rows(panel[sym][0])[key]
+    # cierre de la 1.0: la fila del P/E de la tabla es la de la regla L1; la TTM (que la tabla de rivales lee) va aparte
+    r = (panel[sym][0]["display"]["sections"]["valuation"].get("pe_ttm_row") if key == "pe" else None) \
+        or _rows(panel[sym][0])[key]
     assert r["state"] == "no_aplica"
     assert r["text"] and why in r["text"], r
     # el porqué, sin repetir el «No aplica a …» de la lectura

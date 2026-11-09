@@ -1540,14 +1540,6 @@
           "text": "estados de Yahoo (yfinance): 26 campos; SEC EDGAR: 2 (country, ingresos); Finnhub: 4 (P/E adelantado, payout, PEG, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; fijados por la regla del arquetipo: 6 (crecimiento de ingresos, deuda/patrimonio, deuda/activo, deuda neta, valor de empresa, EV/ventas); sin dato utilizable (ausente o de otro periodo): 5 (EBITDA, BPA estimado, beneficio bruto, beneficio operativo, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque P/B y P/TBV: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 4 (máximo con 2) = -2.0, redondeado a -2."
-        },
-        {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.17 × 2 (máximo con 1) = +0.3, redondeado a +0."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: Bank (Money Center), Damodaran; perfil de Yahoo Finance: industria Banks—Diversified, sector Financial Services."
         }
@@ -1959,35 +1951,13 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2.",
-          "sign": "0",
-          "tone": "neu"
-        },
+        "block": null,
         "dcf_composition": null,
         "fair_value": {
           "state": "no_aplica",
           "text": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)"
         },
         "multiples": [
-          {
-            "bench": 14.0762267832,
-            "bench_txt": "14.08x",
-            "fmt": "mult",
-            "gap_pct": -9.63276540979,
-            "gap_txt": "-10%",
-            "higher_is_better": false,
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "En línea",
-            "role": "block",
-            "state": "con_dato",
-            "text": "P/E (TTM) de 12.7x frente a 14.1x de su industria sin ella (-10%): en línea.",
-            "tone": "neu",
-            "value": 12.7202968786,
-            "value_txt": "12.72x"
-          },
           {
             "bench": null,
             "bench_txt": "—",
@@ -1998,7 +1968,7 @@
             "key": "forward_pe",
             "label": "Forward P/E",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2059,28 +2029,7 @@
             "text": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)"
           }
         ],
-        "scored": [
-          {
-            "in_block": true,
-            "key": "p_b_frente_a_roe",
-            "label": "P/B frente a ROE",
-            "reading": "Exigente",
-            "reason": "Prima: 1.30x frente a 0.94x justificado por su ROE (Ke 10.0% con β ajustada 1.09, g 2.5%)",
-            "sign": "(-2)",
-            "tone": "warn",
-            "value_txt": "138% del P/B justificado (1.30x frente a 0.94x)"
-          },
-          {
-            "in_block": true,
-            "key": "p_tbv_frente_a_rote",
-            "label": "P/TBV frente a ROTE",
-            "reading": "Exigente",
-            "reason": "Prima: 1.74x frente a 1.53x justificado por su ROTE (Ke 10.0% con β ajustada 1.09, g 2.5%)",
-            "sign": "(-2)",
-            "tone": "warn",
-            "value_txt": "114% del P/TBV justificado (1.74x frente a 1.53x)"
-          }
-        ]
+        "scored": []
       },
       "version": 1
     },
@@ -2794,7 +2743,7 @@
       },
       "roe": {
         "label": "Competitivo",
-        "text": "el ROE (TTM) de 11.0% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto)",
+        "text": "el ROE (TTM) de 11.0% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto); frente a la referencia de su industria sin ella (14.2%), en cambio, queda por debajo (-23%)",
         "tone": "neu"
       },
       "roic_wacc_spread": null,
@@ -3087,83 +3036,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": true,
-                  "metric": "P/B frente a ROE",
-                  "reason": "Prima: 1.30x frente a 0.94x justificado por su ROE (Ke 10.0% con β ajustada 1.09, g 2.5%)",
-                  "sign": "(-2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "138% del P/B justificado (1.30x frente a 0.94x)"
-                },
-                {
-                  "in_block": true,
-                  "metric": "P/TBV frente a ROTE",
-                  "reason": "Prima: 1.74x frente a 1.53x justificado por su ROTE (Ke 10.0% con β ajustada 1.09, g 2.5%)",
-                  "sign": "(-2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "114% del P/TBV justificado (1.74x frente a 1.53x)"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque P/B y P/TBV",
-                  "reason": "media de 2 lecturas en una escala de −1 a +1 (P/B frente a ROE -0.50; P/TBV frente a ROTE -0.50): -0.50, que suma -2.0 puntos de un máximo de ±4.",
-                  "sign": "-2",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "2 múltiplos"
-                },
-                {
-                  "in_block": true,
-                  "metric": "P/E frente al sector",
-                  "reason": "En línea (12.7x frente a 14.1x)",
-                  "sign": "(0)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "12.72x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "Forward P/E",
-                  "reason": "P/E estable a mejor (13x → 11x forward creíble); forward 11.0x (implica +16% de BPA); con el crecimiento que respalda su histórico (+14% anual del BPA a 3 años), 11.2x.",
-                  "sign": "(+1)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "10.99x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2.",
-                  "sign": "0",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "2 múltiplos"
-                },
-                {
-                  "in_block": false,
-                  "metric": "No aplica",
-                  "reason": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
-                  "sign": "n/a",
-                  "state": "no_aplica",
-                  "tone": "neu",
-                  "value": "P/FCF, EV/EBITDA, PEG, DCF"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 40.0,
-              "score": 8,
-              "score_txt": "8 / 20",
-              "text": null,
-              "tone": "warn"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3255,7 +3127,7 @@
             }
           ],
           "coverage_notes": [],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -3417,7 +3289,7 @@
           ]
         ],
         "figures_title": "Cifras de los últimos doce meses (TTM, a 31 de marzo de 2026)",
-        "intro": "El ROE (TTM) de 11.0% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto).",
+        "intro": "El ROE (TTM) de 11.0% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto); frente a la referencia de su industria sin ella (14.2%), en cambio, queda por debajo (-23%).",
         "quality_readings": [],
         "roce_reading": null,
         "rows": [
@@ -3679,10 +3551,21 @@
             }
           ]
         },
-        "intro": "El mercado paga 12.7x beneficios, un -10% frente a la referencia de su industria sin ella (14.1x).",
+        "intro": "P/B frente a ROE: prima: 1.30x frente a 0.94x justificado por su ROE (Ke 10.0% con β ajustada 1.09, g 2.5%). P/TBV frente a ROTE: prima: 1.74x frente a 1.53x justificado por su ROTE (Ke 10.0% con β ajustada 1.09, g 2.5%).",
         "ke_note": "Ke 9.99% = Rf 4.94% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β ajustada 1.09 [bruta 1.14, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.41% + prima de riesgo país 0.23 pp (ingresos por geografía: EMEA 7%, Latin America 2%, Asia 5%; Damodaran, enero de 2026). Bancos y aseguradoras no usan WACC: se valoran por P/B justificado con Ke.",
         "market_note": null,
         "normalization_note": null,
+        "pe_ttm_row": {
+          "bench": "14.08x",
+          "gap": "-10%",
+          "key": "pe",
+          "label": "P/E (TTM)",
+          "reading": "En línea",
+          "state": "con_dato",
+          "text": "P/E (TTM) de 12.7x frente a 14.1x de su industria sin ella (-10%): en línea.",
+          "tone": "neu",
+          "value": "12.72x"
+        },
         "premortem": {
           "items": [
             "el ROTE sostenido bajara del 15.5% que descuenta el precio (obtiene un 14.0%)"
@@ -3710,15 +3593,15 @@
         },
         "rows": [
           {
-            "bench": "14.08x",
-            "gap": "-10%",
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "En línea",
+            "bench": "12.06x",
+            "gap": "-7%",
+            "key": "pe_l1",
+            "label": "P/E (12 meses)",
+            "reading": "Valoración en línea",
             "state": "con_dato",
-            "text": "P/E (TTM) de 12.7x frente a 14.1x de su industria sin ella (-10%): en línea.",
+            "text": "Referencia: la mediana de bancos y aseguradoras en el universo, según la regla L1, no la industria.",
             "tone": "neu",
-            "value": "12.72x"
+            "value": "11.18x"
           },
           {
             "bench": "—",
@@ -3796,17 +3679,6 @@
             "text": "el balance es el producto (depósitos y préstamos)",
             "tone": "neu",
             "value": "—"
-          },
-          {
-            "bench": "—",
-            "gap": "—",
-            "key": "earnings_yield",
-            "label": "Earnings Yield (E/P)",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
-            "tone": null,
-            "value": "7.86%"
           },
           {
             "bench": "—",
@@ -3931,16 +3803,21 @@
           "note": "P/E 11.2x frente a la mediana de bancos y aseguradoras (12.1x), 0.93 veces: en el tercio central del universo.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "Bloque P/B y P/TBV · 2 múltiplos",
-              "tone": "neg",
-              "value": -2
+              "kind": "fact",
+              "label": "P/E (12 meses)",
+              "short": "P/E",
+              "text": "11.2x"
             },
             {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 2 múltiplos",
-              "tone": "neu",
-              "value": 0
+              "kind": "fact",
+              "label": "Mediana de bancos y aseguradoras",
+              "short": "Mediana de su grupo",
+              "text": "12.1x"
+            },
+            {
+              "kind": "fact",
+              "label": "Tercio del universo",
+              "text": "central"
             }
           ],
           "score": 59,
@@ -4001,7 +3878,7 @@
         },
         {
           "label": "RENTABILIDAD",
-          "text": "El ROE (TTM) de 11.0% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto)."
+          "text": "El ROE (TTM) de 11.0% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto); frente a la referencia de su industria sin ella (14.2%), en cambio, queda por debajo (-23%)."
         },
         {
           "label": "SOLIDEZ",
@@ -4013,7 +3890,7 @@
         },
         {
           "label": "VALORACIÓN FRENTE A SU SECTOR",
-          "text": "P/B frente a ROE: Prima: 1.30x frente a 0.94x justificado por su ROE (Ke 10.0% con β ajustada 1.09, g 2.5%). El mercado paga 12.7x beneficios, un -10% frente a la referencia de su industria sin ella (14.1x)."
+          "text": "P/B frente a ROE: Prima: 1.30x frente a 0.94x justificado por su ROE (Ke 10.0% con β ajustada 1.09, g 2.5%). P/E 11.2x frente a la mediana de bancos y aseguradoras (12.1x), 0.93 veces: en el tercio central del universo."
         },
         {
           "label": "CONTEXTO DE MERCADO",

@@ -47,11 +47,6 @@
       },
       {
         "category": "Valoración",
-        "detail": "Paga 31.7x beneficios normalizados frente a 45.1x de sus pares del universo (-30%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-        "reason": "Cotiza con descuento — P/E normalizado 31.7x"
-      },
-      {
-        "category": "Valoración",
         "detail": "Cotiza a 21.0x EBITDA frente a 26.9x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
         "reason": "EV/EBITDA barato — 21.0x"
       }
@@ -1739,10 +1734,6 @@
           "text": "estados de Yahoo (yfinance): 40 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 2 (BPA estimado, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.03 × 6 (máximo con 3) = -0.2, redondeado a +0."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: Semiconductor, Damodaran; perfil de Yahoo Finance: industria Semiconductors, sector Technology."
         }
@@ -2458,12 +2449,7 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +0.00 → +0.42; P/FCF -1.00; EV/EBITDA +0.50): -0.03, que suma -0.2 puntos de un máximo de ±6.",
-          "sign": "0",
-          "tone": "neu"
-        },
+        "block": null,
         "dcf_composition": {
           "explicit_pct": 48.2,
           "terminal_pct": 51.8
@@ -2531,23 +2517,6 @@
         },
         "multiples": [
           {
-            "bench": 45.06395,
-            "bench_txt": "45.06x",
-            "fmt": "mult",
-            "gap_pct": -31.1770277641,
-            "gap_txt": "-31%",
-            "higher_is_better": false,
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "Descuento",
-            "role": "block",
-            "state": "con_dato",
-            "text": "P/E (TTM) de 31.0x frente a 45.1x de sus pares del universo (-31%): descuento.",
-            "tone": "pos",
-            "value": 31.0143497969,
-            "value_txt": "31.01x"
-          },
-          {
             "bench": null,
             "bench_txt": "—",
             "fmt": "mult",
@@ -2557,7 +2526,7 @@
             "key": "forward_pe",
             "label": "Forward P/E",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2591,7 +2560,7 @@
             "key": "peg",
             "label": "PEG (BPA a 3 años)",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2608,7 +2577,7 @@
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": "EV/EBITDA de 21.0x frente a 26.9x de sus pares del universo (-22%): descuento.",
             "tone": "pos",
@@ -2625,7 +2594,7 @@
             "key": "pfcf",
             "label": "P/FCF",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2832,10 +2801,10 @@
           "value": "$2.23T"
         },
         {
-          "key": "pe",
-          "label": "P/E reportado (TTM)",
+          "key": "pe_l1",
+          "label": "P/E (12 meses)",
           "state": "con_dato",
-          "value": "31.01x"
+          "value": "40.83x"
         },
         {
           "key": "roe",
@@ -3347,7 +3316,7 @@
           "red_flags": 0,
           "strengths": 6,
           "unmeasured": null,
-          "valuation": 4,
+          "valuation": 3,
           "warnings": 0
         },
         "groups": [
@@ -3417,11 +3386,6 @@
                 "category": "Valoración",
                 "detail": "Por cada dólar invertido en la acción, el negocio genera solo 1.6% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
                 "reason": "FCF yield bajo — 1.6%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Paga 31.7x beneficios normalizados frente a 45.1x de sus pares del universo (-30%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-                "reason": "Cotiza con descuento — P/E normalizado 31.7x"
               },
               {
                 "category": "Valoración",
@@ -3704,83 +3668,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": true,
-                  "metric": "P/E normalizado frente al sector",
-                  "reason": "Atractivo (31.7x)",
-                  "sign": "(+3)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "31.73x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "Forward P/E",
-                  "reason": "P/E normalizado mejorando (32x → 27x forward creíble); forward 18.9x (implica +68% de BPA); con el crecimiento que respalda su histórico (+19% anual del BPA a 3 años), 26.6x.",
-                  "sign": "(+2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "18.88x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "P/FCF de mantenimiento",
-                  "reason": "Muy alto (35.8x) (sobre el flujo de mantenimiento, el mismo que el DCF: la inversión de expansión no hunde el múltiplo)",
-                  "sign": "(-4)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "35.76x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "EV/EBITDA frente al sector",
-                  "reason": "Atractivo (21.0x)",
-                  "sign": "(+2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "21.03x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "PEG",
-                  "reason": "Razonable (1.66)",
-                  "sign": "(0)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "1.66"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +0.00 → +0.42; P/FCF -1.00; EV/EBITDA +0.50): -0.03, que suma -0.2 puntos de un máximo de ±6.",
-                  "sign": "0",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "5 múltiplos"
-                },
-                {
-                  "in_block": false,
-                  "metric": "DCF directo (valor frente al precio)",
-                  "reason": "Claramente cara por DCF (fiabilidad alta)",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "-45%"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 30.0,
-              "score": 6,
-              "score_txt": "6 / 20",
-              "text": null,
-              "tone": "neg"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3874,7 +3761,7 @@
           "coverage_notes": [
             "Precio: hay un informe más reciente en EDGAR sin incorporar"
           ],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -4319,7 +4206,7 @@
         ],
         "dcf_missing": null,
         "dcf_params": "Parámetros del modelo — WACC 10.67% · crecimiento 14.09% (media del interanual (+31.6%) y del CAGR de ingresos a 3 años (+18.9%): difieren más de 10 pp (+25.3%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+2.9%, tasas base de Mauboussin): la media de los dos) · terminal 2.50% · el valor terminal aporta el 52% del valor total · invierte en expansión (capex 1.7 veces la D&A en 3 ejercicios y el 60% del flujo operativo): el DCF parte del flujo de mantenimiento $62.36B (flujo operativo − D&A, sin pasar del capex real) y cada año reinvierte lo que exige su crecimiento (crecimiento ÷ ROIC 54.4%), no el FCF − SBC de hoy $36.03B; con él, el valor sería $177.91 por acción (-59% frente al precio)",
-        "dcf_reliability": "Fiabilidad del DCF: alta. Aporta -4 puntos a Valoración (máximo ±4 con fiabilidad alta).",
+        "dcf_reliability": "Fiabilidad del DCF: alta.",
         "dcf_reliability_level": "alta",
         "dcf_reliability_tone": "pos",
         "intrinsic": {
@@ -4383,10 +4270,21 @@
             }
           ]
         },
-        "intro": "El mercado paga 31.0x beneficios, un -31% frente a la referencia de sus pares del universo (45.1x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad. El FCF yield de 1.6% es bajo: se paga caro cada dólar de caja libre. Cotiza 290% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
+        "intro": "El FCF yield de 1.6% es bajo: se paga caro cada dólar de caja libre. Cotiza 290% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $71.25B, normalizado $69.65B (no recurrentes 2.2% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $1.60B netos). El score usa el beneficio normalizado.",
+        "pe_ttm_row": {
+          "bench": "45.06x",
+          "gap": "-31%",
+          "key": "pe",
+          "label": "P/E (TTM)",
+          "reading": "Descuento",
+          "state": "con_dato",
+          "text": "P/E (TTM) de 31.0x frente a 45.1x de sus pares del universo (-31%): descuento.",
+          "tone": "pos",
+          "value": "31.01x"
+        },
         "premortem": {
           "items": [
             "el flujo de mantenimiento (con la reinversión del crecimiento) por acción creciera al menos un 20.0% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 14.7% anual en 9 años (FY2015–FY2024)",
@@ -4415,15 +4313,15 @@
         },
         "rows": [
           {
-            "bench": "45.06x",
-            "gap": "-31%",
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "Descuento",
+            "bench": "30.78x",
+            "gap": "+33%",
+            "key": "pe_l1",
+            "label": "P/E (12 meses)",
+            "reading": "Valoración alta",
             "state": "con_dato",
-            "text": "P/E (TTM) de 31.0x frente a 45.1x de sus pares del universo (-31%): descuento.",
-            "tone": "pos",
-            "value": "31.01x"
+            "text": "Referencia: la mediana de tecnología en el universo, según la regla L1, no la industria.",
+            "tone": "warn",
+            "value": "40.83x"
           },
           {
             "bench": "—",
@@ -4501,17 +4399,6 @@
             "text": null,
             "tone": null,
             "value": "1.62%"
-          },
-          {
-            "bench": "—",
-            "gap": "—",
-            "key": "earnings_yield",
-            "label": "Earnings Yield (E/P)",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
-            "tone": null,
-            "value": "3.22%"
           },
           {
             "bench": "—",
@@ -4764,7 +4651,7 @@
         "red_flags": 0,
         "strengths": 6,
         "unmeasured": null,
-        "valuation": 4,
+        "valuation": 3,
         "warnings": 0
       },
       "cards": [
@@ -4802,15 +4689,15 @@
           "value": "35.30"
         },
         {
-          "bench": "vs pares 45.06x",
-          "delta": "-31%",
-          "key": "pe",
-          "label": "P/E reportado (TTM)",
-          "pill": "Descuento",
+          "bench": "vs mediana de su grupo 30.78x",
+          "delta": "+33%",
+          "key": "pe_l1",
+          "label": "P/E (12 meses)",
+          "pill": "Valoración alta",
           "state": "con_dato",
-          "tone": "pos",
+          "tone": "warn",
           "unit": "x",
-          "value": "31.01"
+          "value": "40.83"
         },
         {
           "bench": "",
@@ -4842,16 +4729,21 @@
           "note": "P/E 40.8x frente a la mediana de tecnología (30.8x), 1.33 veces: en el tercio más alto del universo; aviso: el beneficio de doce meses es el del periodo cerrado el 2025-12-31, el último que EDGAR recoge; los estados del análisis llegan al 2026-06-30.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 5 múltiplos",
-              "tone": "neu",
-              "value": 0
+              "kind": "fact",
+              "label": "P/E (12 meses)",
+              "short": "P/E",
+              "text": "40.8x"
             },
             {
-              "kind": "signed",
-              "label": "DCF directo (valor frente al precio) · -45%",
-              "tone": "neg",
-              "value": -4
+              "kind": "fact",
+              "label": "Mediana de tecnología",
+              "short": "Mediana de su grupo",
+              "text": "30.8x"
+            },
+            {
+              "kind": "fact",
+              "label": "Tercio del universo",
+              "text": "más alto"
             }
           ],
           "score": 24,
@@ -4924,7 +4816,7 @@
         },
         {
           "label": "VALORACIÓN FRENTE A SU SECTOR",
-          "text": "El mercado paga 31.0x beneficios, un -31% frente a la referencia de sus pares del universo (45.1x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad. El valor intrínseco estimado ($240) está un 45% por debajo del precio ($430.00): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)."
+          "text": "P/E 40.8x frente a la mediana de tecnología (30.8x), 1.33 veces: en el tercio más alto del universo; aviso: el beneficio de doce meses es el del periodo cerrado el 2025-12-31, el último que EDGAR recoge; los estados del análisis llegan al 2026-06-30. El valor intrínseco estimado ($240) está un 45% por debajo del precio ($430.00): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",

@@ -132,7 +132,9 @@ export interface MetricCard {
 export type CompositionRow =
   | { label: string; kind: "bar"; value: number; max: number; pct: number; tone: Tone }
   | { label: string; kind: "nc" }
-  | { label: string; kind: "signed"; value: number; tone: Tone };
+  | { label: string; kind: "signed"; value: number; tone: Tone }
+  // cierre de la 1.0: las cifras de la regla L1 (múltiplo, mediana de su grupo, tercio), sin barra ni puntos
+  | { label: string; kind: "fact"; text: string; detail?: string | null };
 
 export interface CompositionBlock {
   title: string;
@@ -147,7 +149,8 @@ export interface Summary {
   exec_items: Array<{ label: string; text: string }>;
   composition: {
     quality: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "bar" | "nc" }>> };
-    price: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "signed" }>>; signed_max: number };
+    // cierre de la 1.0: el precio es siempre la regla L1; sus filas son sus cifras, sin los puntos del sistema anterior
+    price: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "fact" }>>; signed_max: number };
     caption: string;
   };
   alert_counts: { red_flags: number; warnings: number; strengths: number; /** Fase 1 · pendientes: sin color. */ balance?: number; valuation?: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };

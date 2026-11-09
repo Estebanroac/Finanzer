@@ -1662,10 +1662,6 @@
           "text": "estados de Yahoo (yfinance): 29 campos; SEC EDGAR: 1 (beneficio operativo); Yahoo (cotización y perfil): 37 (liquidez corriente, debtToEquity, ebitdaMargins, enterpriseToEbitda, enterpriseToRevenue, enterpriseValue, P/E adelantado, grossMargins y 29 más); calculados con otros datos del análisis: 8 campos; sin dato utilizable (ausente o de otro periodo): 8 (crecimiento del beneficio, EV/EBITDA, cobertura de intereses, deuda neta/EBITDA, P/FFO, P/E, payout, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -1.00 × 2 (máximo con 1) = -2.0, redondeado a -2."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: Software (Internet), Damodaran; perfil de Yahoo Finance: industria Software - Application, sector Technology."
         }
@@ -2263,12 +2259,7 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 1 lectura en una escala de −1 a +1 (P/FCF -1.00): -1.00, que suma -2.0 puntos de un máximo de ±2.",
-          "sign": "-2",
-          "tone": "neg"
-        },
+        "block": null,
         "dcf_composition": null,
         "fair_value": {
           "state": "no_significativo",
@@ -2338,7 +2329,7 @@
             "key": "pfcf",
             "label": "P/FCF",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2363,28 +2354,7 @@
             "value_txt": "0.92%"
           }
         ],
-        "scored": [
-          {
-            "in_block": false,
-            "key": "ev_ventas",
-            "label": "EV/Ventas",
-            "reading": "Exigente",
-            "reason": "Exigente por ventas (23.9x)",
-            "sign": "-2",
-            "tone": "warn",
-            "value_txt": "23.94x"
-          },
-          {
-            "in_block": false,
-            "key": "regla_de_40",
-            "label": "Regla de 40",
-            "reading": "Exigente",
-            "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
-            "sign": "-2",
-            "tone": "warn",
-            "value_txt": "23"
-          }
-        ]
+        "scored": []
       },
       "version": 1
     },
@@ -3234,74 +3204,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": false,
-                  "metric": "EV/Ventas",
-                  "reason": "Exigente por ventas (23.9x)",
-                  "sign": "-2",
-                  "state": "con_dato",
-                  "tone": "warn",
-                  "value": "23.94x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Regla de 40",
-                  "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23.",
-                  "sign": "-2",
-                  "state": "con_dato",
-                  "tone": "warn",
-                  "value": "23"
-                },
-                {
-                  "in_block": true,
-                  "metric": "P/FCF",
-                  "reason": "Muy alto (109.0x)",
-                  "sign": "(-4)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "109.05x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 1 lectura en una escala de −1 a +1 (P/FCF -1.00): -1.00, que suma -2.0 puntos de un máximo de ±2.",
-                  "sign": "-2",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "1 múltiplo"
-                },
-                {
-                  "in_block": false,
-                  "metric": "DCF directo: no puntúa",
-                  "reason": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo.",
-                  "sign": "0",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "No significativo"
-                },
-                {
-                  "in_block": false,
-                  "metric": "No aplica",
-                  "reason": "EV/EBITDA: No aplica a empresas en crecimiento sin beneficio: EBITDA negativo o nulo, sin resultado operativo que capitalizar; P/E, PEG: No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
-                  "sign": "n/a",
-                  "state": "no_aplica",
-                  "tone": "neu",
-                  "value": "P/E, EV/EBITDA, PEG"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 20.0,
-              "score": 4,
-              "score_txt": "4 / 20",
-              "text": null,
-              "tone": "neg"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3393,7 +3295,7 @@
             }
           ],
           "coverage_notes": [],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -3864,6 +3766,7 @@
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado −$1.09B, normalizado −$1.11B (no recurrentes 1.8% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta; ganancias por venta de valores (explicita, confianza alta): $19.72M netos). El score usa el beneficio normalizado.",
+        "pe_ttm_row": null,
         "premortem": null,
         "reference_note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). En ROE, margen neto, la misma industria a escala global sin la empresa (150 empresas): sin ella, la de su región no sirve de referencia. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": null,
@@ -4131,28 +4034,10 @@
           "note": "Precio sin veredicto: beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "EV/Ventas · 23.94x",
-              "tone": "neg",
-              "value": -2
-            },
-            {
-              "kind": "signed",
-              "label": "Regla de 40 · 23",
-              "tone": "neg",
-              "value": -2
-            },
-            {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 1 múltiplo",
-              "tone": "neg",
-              "value": -2
-            },
-            {
-              "kind": "signed",
-              "label": "DCF directo: no puntúa · No significativo",
-              "tone": "neu",
-              "value": 0
+              "detail": "beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido",
+              "kind": "fact",
+              "label": "P/E normalizado (12 meses)",
+              "text": "sin dato"
             }
           ],
           "score": null,

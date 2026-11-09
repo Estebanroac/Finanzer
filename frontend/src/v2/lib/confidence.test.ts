@@ -7,10 +7,10 @@ const conf = async (t: string) => ((await import(`@/v2/__fixtures__/${t}.json`))
 // V7 · P1: la línea bajo «Consistencia» (antes «Confianza del veredicto») (la misma que el PDF: cover.confidence_line, test_pdf_v2_report.py)
 describe("confidenceLine", () => {
   // Fase 1 · pendientes (7-nov-2026): la consistencia (antes, la confianza); ya no contrae el precio ni la calidad.
-  it("DOW: el DCF directo descartado no puntúa, y el que puntúa", async () => {
+  // cierre de la 1.0 (9-nov-2026): con la regla L1 el DCF inverso tampoco puntúa; la frase ya no lo dice
+  it("DOW: el DCF directo descartado no puntúa, sin los puntos del sistema anterior", async () => {
     expect(confidenceLine(await conf("DOW"))).toBe("No es una probabilidad de acierto. El DCF "
-      + "directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso "
-      + "(−2 puntos).");
+      + "directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia.");
   });
   it("O: consistente, sin ninguna frase de contracción", async () => {
     const line = confidenceLine(await conf("O"))!;

@@ -3587,16 +3587,10 @@
      "note": "Precio sin veredicto: beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido.",
      "rows": [
       {
-       "label": "EV/Ventas · 3.06x",
-       "kind": "signed",
-       "value": 4,
-       "tone": "pos"
-      },
-      {
-       "label": "Regla de 40 · ≤ -25",
-       "kind": "signed",
-       "value": -4,
-       "tone": "neg"
+       "label": "P/E normalizado (12 meses)",
+       "kind": "fact",
+       "text": "sin dato",
+       "detail": "beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido"
       }
      ],
      "signed_max": 6
@@ -3936,6 +3930,7 @@
      }
     ],
     "market_note": null,
+    "pe_ttm_row": null,
     "reference_note": "Referencia: industria «Automóviles y camiones»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 165 empresas (la de EE. UU. no es representativa: dominada por pocas empresas de múltiplo extremo: P/E agregado 119.6x frente a 64.3x de media) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Rivian Automotive, que pesa el 1 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
     "normalization_note": "Beneficio TTM (4 trimestres): reportado −$3.23B, normalizado −$3.60B (no recurrentes 11.3% del beneficio; pico de resultado no operativo (inferida, confianza media): $366.17M netos; pico de resultado no operativo (inferida, confianza media): −$158.40M netos, bajo el umbral, no aplicada). El score usa el beneficio normalizado.",
     "intrinsic": {
@@ -4496,7 +4491,7 @@
      }
     ],
     "breakdown": {
-     "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque).",
+     "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura).",
      "coverage_notes": [],
      "categories": [
       {
@@ -4612,47 +4607,6 @@
          "sign": "n/a",
          "tone": "neu",
          "reason": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC (no cuenta en la cobertura)",
-         "in_block": false,
-         "state": "no_aplica"
-        }
-       ]
-      },
-      {
-       "key": "Valoración",
-       "name": "Valoración",
-       "score": 10,
-       "max": 20,
-       "pct": 50.0,
-       "tone": "warn",
-       "conclusive": true,
-       "score_txt": "10 / 20",
-       "group": "price",
-       "text": null,
-       "items": [
-        {
-         "metric": "EV/Ventas",
-         "value": "3.06x",
-         "sign": "+4",
-         "tone": "pos",
-         "reason": "Barato por ventas (3.1x)",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "Regla de 40",
-         "value": "≤ -25",
-         "sign": "-4",
-         "tone": "neg",
-         "reason": "Crecimiento no significativo (año base anómalo); con su techo (48.1%, la tasa desde el año anómalo, que lo sobrestima) + margen FCF − SBC -72.9% = -25, ya en el tramo más bajo.",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "No aplica",
-         "value": "P/E, EV/EBITDA, PEG, DCF",
-         "sign": "n/a",
-         "tone": "neu",
-         "reason": "DCF: No aplica a empresas en crecimiento sin beneficio con FCF negativo: no hay flujo que descontar; EV/EBITDA: No aplica a empresas en crecimiento sin beneficio: EBITDA negativo o nulo, sin resultado operativo que capitalizar; P/E, PEG: No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
          "in_block": false,
          "state": "no_aplica"
         }
@@ -5547,28 +5501,7 @@
      }
     ],
     "block": null,
-    "scored": [
-     {
-      "key": "ev_ventas",
-      "label": "EV/Ventas",
-      "in_block": false,
-      "value_txt": "3.06x",
-      "reading": "Favorable",
-      "tone": "pos",
-      "sign": "+4",
-      "reason": "Barato por ventas (3.1x)"
-     },
-     {
-      "key": "regla_de_40",
-      "label": "Regla de 40",
-      "in_block": false,
-      "value_txt": "≤ -25",
-      "reading": "Desfavorable",
-      "tone": "neg",
-      "sign": "-4",
-      "reason": "Crecimiento no significativo (año base anómalo); con su techo (48.1%, la tasa desde el año anómalo, que lo sobrestima) + margen FCF − SBC -72.9% = -25, ya en el tramo más bajo"
-     }
-    ],
+    "scored": [],
     "dcf_composition": null
    },
    "profitability": {

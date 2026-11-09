@@ -143,6 +143,11 @@ def summary(analysis: Dict[str, Any]) -> Dict[str, Any]:
     sections = (a.get("display") or {}).get("sections") or {}
     rows = {r.get("key"): r for s in ("valuation", "profitability", "solvency", "growth")
             for r in (sections.get(s) or {}).get("rows") or []}
+    # cierre de la 1.0: la tabla de múltiplos lleva el P/E de la regla L1; la columna «P/E (TTM)» de los rivales sigue
+    # leyendo la fila TTM, que la sección guarda aparte
+    _pe_ttm = (sections.get("valuation") or {}).get("pe_ttm_row")
+    if _pe_ttm:
+        rows["pe"] = _pe_ttm
     km = a.get("key_metrics") or {}
     for key in cfg("market.peers.summary_columns"):
         if key not in metrics and key != "revenue_growth" and key in rows:
@@ -175,7 +180,7 @@ def summary(analysis: Dict[str, Any]) -> Dict[str, Any]:
     q, pa = a.get("quality") or {}, a.get("price_attractiveness") or {}
     return {"symbol": a.get("symbol"), "name": prof.get("name"), "price": a.get("price"),
             "currency": prof.get("currency"), "quality": {"score": q.get("score"), "level": q.get("level")},
-            "price_score": {"score": pa.get("score"), "level": pa.get("level")},
+            "price_score": {"score": pa.get("score"), "level": pa.get("level"), "reason": pa.get("reason")},
             "consistency": (a.get("verdict") or {}).get("consistency"), "metrics": metrics,
             "reference": reference(a)}
 

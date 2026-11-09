@@ -179,7 +179,10 @@ def test_front_page_uses_normalized_pe_when_reported_is_unreliable(ref):
         txt = a["display"]["readings"]["pe"]["text"]
         assert f"{n['pe_normalized']:.1f}x el beneficio normalizado" in txt and "no es fiable" in txt, s
         val = next(i["text"] for i in a["display"]["summary"]["exec_items"] if i["label"] == "VALORACIÓN FRENTE A SU SECTOR")
-        assert f"{n['pe_normalized']:.1f}x" in val, s
+        # cierre de la 1.0 (9-nov-2026): el resumen lleva el único P/E del informe, el normalizado de doce meses de la
+        # regla L1 (antes, el P/E normalizado del motor anterior); el TTM no fiable no aparece
+        pa = a["price_attractiveness"]
+        assert f"{pa['pe_ttm']:.1f}x" in val and f"{a['key_metrics']['pe']:.1f}x" not in val, s
 
 
 # ── E2 (§3 E2) ──

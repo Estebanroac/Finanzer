@@ -123,9 +123,9 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
         f"y mostrando, sin decidir el nivel. Niveles: {_bands('price_l1')}."))
     out.append(bullet(
         "Consistencia: «consistente» si los métodos de valoración coinciden y la cobertura de datos no es baja; si no, "
-        "«mixta». No es una probabilidad de acierto ni mueve las puntuaciones. Alerta roja: solo la de valoración "
-        "extrema, la única con evidencia en la prueba hacia atrás; el estado del balance y la lectura de valoración "
-        "van aparte y sin color."))
+        "«mixta». No es una probabilidad de acierto ni mueve las puntuaciones. Sin alertas rojas: ninguna se "
+        "confirmó en la prueba hacia atrás (dos cortes); la valoración extrema, el estado del balance y la lectura de "
+        "valoración van aparte y sin color."))
     out.append(bullet("Una categoría con menos de la mitad de sus componentes con dato no es concluyente: se excluye "
                       "y la puntuación se reescala sobre las demás."))
 

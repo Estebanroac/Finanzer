@@ -291,7 +291,8 @@ def normalized_figures_are_labelled(a, text):
         # Fase 7 (registro #36): una aseguradora se valora sobre su beneficio operativo: el P/E del análisis ya es el
         # operativo (rotulado así) y la rentabilidad solo lleva "normalizado" si OTRAS partidas la cambian.
         assert a["key_metrics"].get("pe_basis") in ("operativo", "operativo_negativo")
-        assert "P/E operativo" in text
+        # cierre de la 1.0: con la regla L1 el único P/E del informe es el suyo; el operativo no se rotula aparte
+        assert "P/E operativo" in text or (a.get("price_attractiveness") or {}).get("rule") == "L1"
         assert ("ROE normalizado" in metrics) == bool(en.get("quality_differs") and a["key_metrics"].get("roe") is not None)
         return
     assert "ROE" not in metrics and "Margen neto" not in metrics
@@ -420,6 +421,11 @@ def chart_multiples_role_matches_breakdown(a, text):
     adj = a["score"]["breakdown"]["Valoración"]["adjustments"]
     n_members = sum(1 for x in adj if x.get("in_block"))
     shown = [m for m in V["multiples"] if m["role"] == "block"] + [s for s in V["scored"] if s["in_block"]]
+    if (a.get("price_attractiveness") or {}).get("rule") == "L1":
+        # cierre de la 1.0 (9-nov-2026): con la regla L1 el bloque no forma la nota de precio y la web no lo muestra
+        # (el cálculo sigue en score.breakdown, que comprueban los invariantes del bloque)
+        assert not shown and not V.get("block"), shown
+        return
     assert len(shown) == n_members, (n_members, shown)
     if n_members:
         assert V["block"] and V["block"]["label"].startswith("Bloque")

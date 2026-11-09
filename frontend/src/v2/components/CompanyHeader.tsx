@@ -12,7 +12,6 @@ import { chapterHref } from "@/v2/lib/routes";
 import { analysisLogo } from "@/v2/lib/logo";
 import CompanyLogo from "./CompanyLogo";
 
-const signed = (v: number) => (v > 0 ? `+${v}` : v === 0 ? "0" : `−${Math.abs(v)}`);
 const NUMBER_WORDS = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"];
 const cap1 = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** "Excelente desde 80, sólida desde 65, media desde 45; débil por debajo." (bandas de la config). */
@@ -60,7 +59,6 @@ function ScoreCards({ analysis, withBreakdown, ids }: { analysis: StockAnalysis;
   const comp = d.summary.composition;
   const cats = cover.categories.flatMap((c) => c.items);
   const qualityCats = cats.filter((i) => i.applicable && i.name !== "Valoración");
-  const valuation = cats.find((i) => i.name === "Valoración");
   const conf = d.consistency ?? d.confidence;
   const contraction = sentences(conf?.summary).find((x) => x.startsWith("Contrae"));
 
@@ -72,9 +70,10 @@ function ScoreCards({ analysis, withBreakdown, ids }: { analysis: StockAnalysis;
   };
   const priceBd: Breakdown = {
     title: `Cómo sale el ${p.score ?? "—"}`,
-    rows: comp.price.rows.map((r) => ({ name: r.label, value: signed(r.value), tone: toVTone(r.tone), term: priceRowTerm(r.label) })),
-    total: valuation ? { name: "Valoración", value: `${valuation.score_txt} → ${p.raw ?? "—"} / 100`,
-      tone: toVTone(valuation.tone), term: categoryTerm("Valoración") } : undefined,
+    // cierre de la 1.0: con la regla L1 las filas son sus cifras («fact») y no hay total de la Valoración /20 anterior
+    rows: comp.price.rows.map((r) => ({ name: r.label, value: r.text, term: priceRowTerm(r.label) })),
+    // cierre de la 1.0: sin total de la Valoración /20 del sistema anterior (la nota es la de la regla L1)
+    total: undefined,
     after: p.contracted ? [{ name: "Ajuste por confianza", value: `${p.raw ?? "—"} → ${p.score ?? "—"}`, term: priceRowTerm("Ajuste por confianza") }] : [],
     notes: [PRICE_NOTE, ...(p.contracted && contraction ? [contraction] : [])],
   };

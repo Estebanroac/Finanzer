@@ -19,6 +19,7 @@ from reportlab.platypus import CondPageBreak, PageBreak, Paragraph, Spacer
 import segments as _segments
 import names
 from settings import cfg
+from display import price_level_short
 
 from . import parts as P
 from . import theme as T
@@ -562,8 +563,16 @@ def _rivales(a, ctx):
                 (f"{r['summary'].get('name') or r['symbol']} ({r['symbol']})", r["summary"]) for r in ready]:
             q, p = sm.get("quality") or {}, sm.get("price_score") or {}
             mt = sm.get("metrics") or {}
-            rows.append([label, f"{q.get('score', '—')} · {q.get('level') or '—'}", f"{p.get('score', '—')} · {p.get('level') or '—'}"]
-                        + [(mt.get(k) or {}).get("value_txt") or "Sin dato" for k in keys])
+            # cierre de la 1.0: la nota de precio con la etiqueta de la regla L1 (baja / en línea / alta), la misma de la
+            # portada y la conclusión; sin nota, «sin nota» y el motivo en una nota al pie (antes «None · —»)
+            if p.get("score") is None:
+                _pc = "sin nota"
+                notes.append(f"{sm.get('symbol') or label}: sin nota de valoración"
+                             + (f": {p['reason']}." if p.get("reason") else " (sin P/E con sentido)."))
+            else:
+                _pc = f"{p['score']} · {price_level_short(p.get('level')) or '—'}"
+            rows.append([label, f"{q.get('score') if q.get('score') is not None else '—'} · {q.get('level') or '—'}",
+                         _pc] + [(mt.get(k) or {}).get("value_txt") or "Sin dato" for k in keys])
             notes += [f"{sm.get('symbol') or label}: {mt[k]['note']}." for k in keys if (mt.get(k) or {}).get("note")]
         out.append(P.data_table(["Empresa", "Calidad", "Precio"] + [labels[k] for k in keys], rows, T.CW,
                                 [0.28, 0.14, 0.14] + [0.44 / max(len(keys), 1)] * len(keys)))
@@ -704,6 +713,8 @@ def _conclusion(a, ctx):
                              f"{r['value']:+d}".replace("-", "−"), r.get("tone")))
             elif r["kind"] == "nc":
                 rows.append((f"   {r['label']}", None, "no concluyente", None))
+            elif r["kind"] == "fact":     # cierre de la 1.0: las cifras de la regla L1, sin barra
+                rows.append((f"   {r['label']}", None, r["text"], "sin_barra"))
             else:
                 rows.append((f"   {r['label']}", r["pct"] / 100, f"{r['value']}/{r['max']}", r.get("tone")))
     ac = d["summary"]["alert_counts"]

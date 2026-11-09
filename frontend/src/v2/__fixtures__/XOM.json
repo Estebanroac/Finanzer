@@ -4061,16 +4061,21 @@
      "note": "P/E 22.2x frente a la mediana de energía (13.3x), 1.67 veces: en el tercio más alto del universo.",
      "rows": [
       {
-       "label": "Bloque de múltiplos · 2 múltiplos",
-       "kind": "signed",
-       "value": -2,
-       "tone": "neg"
+       "label": "P/E (12 meses)",
+       "short": "P/E",
+       "kind": "fact",
+       "text": "22.2x"
       },
       {
-       "label": "DCF directo (valor frente al precio) · -12%",
-       "kind": "signed",
-       "value": 0,
-       "tone": "neu"
+       "label": "Mediana de energía",
+       "short": "Mediana de su grupo",
+       "kind": "fact",
+       "text": "13.3x"
+      },
+      {
+       "label": "Tercio del universo",
+       "kind": "fact",
+       "text": "más alto"
       }
      ],
      "signed_max": 6
@@ -4160,10 +4165,6 @@
     {
      "label": "Procedencia de los datos (campos del análisis por fuente)",
      "text": "estados de Yahoo (yfinance): 37 campos; SEC EDGAR: 1 (country); Finnhub: 8 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 4 (arrendamientos financieros, papel comercial, BPA estimado, caja total)."
-    },
-    {
-     "label": "Fórmula del bloque",
-     "text": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 4 (máximo con 2) = -2.0, redondeado a -2."
     },
     {
      "label": "Nombres originales de las fuentes",
@@ -4283,15 +4284,15 @@
     ],
     "rows": [
      {
-      "key": "pe",
-      "label": "P/E (TTM)",
-      "value": "—",
-      "bench": "—",
-      "gap": "—",
-      "reading": "No aplica a empresas cíclicas",
-      "tone": "neu",
-      "state": "no_aplica",
-      "text": "el resultado de un solo ejercicio depende de la fase del ciclo."
+      "key": "pe_l1",
+      "label": "P/E (12 meses)",
+      "value": "22.23x",
+      "bench": "13.28x",
+      "gap": "+67%",
+      "reading": "Valoración alta",
+      "tone": "warn",
+      "state": "con_dato",
+      "text": "Referencia: la mediana de energía en el universo, según la regla L1, no la industria."
      },
      {
       "key": "forward_pe",
@@ -4371,17 +4372,6 @@
       "text": null
      },
      {
-      "key": "earnings_yield",
-      "label": "Earnings Yield (E/P)",
-      "value": "—",
-      "bench": "—",
-      "gap": "—",
-      "reading": "No aplica a empresas cíclicas",
-      "tone": "neu",
-      "state": "no_aplica",
-      "text": "el resultado de un solo ejercicio depende de la fase del ciclo."
-     },
-     {
       "key": "dividend_yield",
       "label": "Dividend Yield",
       "value": "2.33%",
@@ -4416,6 +4406,17 @@
      }
     ],
     "market_note": null,
+    "pe_ttm_row": {
+     "key": "pe",
+     "label": "P/E (TTM)",
+     "value": "—",
+     "bench": "—",
+     "gap": "—",
+     "reading": "No aplica a empresas cíclicas",
+     "tone": "neu",
+     "state": "no_aplica",
+     "text": "el resultado de un solo ejercicio depende de la fase del ciclo."
+    },
     "reference_note": "Referencia: industria «Petróleo y gas integrados»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 34 empresas (la de EE. UU. no es representativa: 4 empresas) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Exxon Mobil, que pesa el 15 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En EV/EBITDA, margen bruto, margen operativo, la mediana de 5 pares del universo, no el agregado. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
     "normalization_note": null,
     "intrinsic": {
@@ -4469,7 +4470,7 @@
      "graham_note": null
     },
     "dcf_params": "Parámetros del modelo — WACC 7.64% · crecimiento 0.61% (ciclo medio de los ingresos de pico a pico) · terminal 2.50% · el valor terminal aporta el 60% del valor total · FCF de mantenimiento $37.67B (flujo operativo − D&A como capex de mantenimiento, promedio de 4 ejercicios), frente al FCF normalizado $35.85B (margen FCF promedio 9.93% × ingresos actuales, que incluye el capex de expansión; ciclo incompleto: 4 ejercicios): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio.",
-    "dcf_reliability": "Fiabilidad del DCF: media (empresa cíclica: el FCF depende de la fase del ciclo). Aporta +0 puntos a Valoración (máximo ±2 con fiabilidad media).",
+    "dcf_reliability": "Fiabilidad del DCF: media (empresa cíclica: el FCF depende de la fase del ciclo)",
     "dcf_reliability_level": "media",
     "dcf_reliability_tone": "warn",
     "dcf_missing": null,
@@ -5184,7 +5185,7 @@
      }
     ],
     "breakdown": {
-     "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque).",
+     "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura).",
      "coverage_notes": [],
      "categories": [
       {
@@ -5293,65 +5294,6 @@
          "reason": "Retorno por encima del costo de capital (spread +2.3 pp)",
          "in_block": false,
          "state": "con_dato"
-        }
-       ]
-      },
-      {
-       "key": "Valoración",
-       "name": "Valoración",
-       "score": 8,
-       "max": 20,
-       "pct": 40.0,
-       "tone": "warn",
-       "conclusive": true,
-       "score_txt": "8 / 20",
-       "group": "price",
-       "text": null,
-       "items": [
-        {
-         "metric": "P/FCF normalizado",
-         "value": "19.33x",
-         "sign": "(0)",
-         "tone": "neu",
-         "reason": "Aceptable (19.3x) (ciclo incompleto: 4 ejercicios)",
-         "in_block": true,
-         "state": "con_dato"
-        },
-        {
-         "metric": "EV/EBITDA normalizado frente al sector",
-         "value": "9.56x",
-         "sign": "(-4)",
-         "tone": "neu",
-         "reason": "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)",
-         "in_block": true,
-         "state": "con_dato"
-        },
-        {
-         "metric": "Bloque de múltiplos",
-         "value": "2 múltiplos",
-         "sign": "-2",
-         "tone": "neg",
-         "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA -1.00): -0.50, que suma -2.0 puntos de un máximo de ±4.",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "DCF directo (valor frente al precio)",
-         "value": "-12%",
-         "sign": "0",
-         "tone": "neu",
-         "reason": "En precio, sensible al WACC: con WACC 6.6% vale 194.59 (frente a -12% con el caso base, fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo.",
-         "in_block": false,
-         "state": "con_dato"
-        },
-        {
-         "metric": "No aplica",
-         "value": "P/E, PEG",
-         "sign": "n/a",
-         "tone": "neu",
-         "reason": "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)",
-         "in_block": false,
-         "state": "no_aplica"
         }
        ]
       },
@@ -6420,15 +6362,6 @@
     },
     "multiples": [
      {
-      "key": "pe",
-      "label": "P/E (TTM)",
-      "higher_is_better": false,
-      "fmt": "mult",
-      "state": "no_aplica",
-      "text": "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo.",
-      "role": "informative"
-     },
-     {
       "key": "forward_pe",
       "label": "Forward P/E",
       "higher_is_better": false,
@@ -6515,34 +6448,8 @@
       "role": "informative"
      }
     ],
-    "block": {
-     "label": "Bloque de múltiplos",
-     "sign": "-2",
-     "tone": "neg",
-     "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA -1.00): -0.50, que suma -2.0 puntos de un máximo de ±4."
-    },
-    "scored": [
-     {
-      "key": "p_fcf_normalizado",
-      "label": "P/FCF normalizado",
-      "in_block": true,
-      "value_txt": "19.33x",
-      "reading": "En línea",
-      "tone": "neu",
-      "sign": "(0)",
-      "reason": "Aceptable (19.3x) (ciclo incompleto: 4 ejercicios)"
-     },
-     {
-      "key": "ev_ebitda_normalizado",
-      "label": "EV/EBITDA normalizado",
-      "in_block": true,
-      "value_txt": "9.56x",
-      "reading": "Desfavorable",
-      "tone": "neg",
-      "sign": "(-4)",
-      "reason": "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)"
-     }
-    ],
+    "block": null,
+    "scored": [],
     "dcf_composition": {
      "explicit_pct": 39.8,
      "terminal_pct": 60.2

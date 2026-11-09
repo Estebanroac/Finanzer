@@ -2184,28 +2184,7 @@
             "value_txt": "-18.61%"
           }
         ],
-        "scored": [
-          {
-            "in_block": false,
-            "key": "ev_ventas",
-            "label": "EV/Ventas",
-            "reading": "Favorable",
-            "reason": "Barato por ventas (3.1x)",
-            "sign": "+4",
-            "tone": "pos",
-            "value_txt": "3.06x"
-          },
-          {
-            "in_block": false,
-            "key": "regla_de_40",
-            "label": "Regla de 40",
-            "reading": "Desfavorable",
-            "reason": "Crecimiento no significativo (año base anómalo); con su techo (48.1%, la tasa desde el año anómalo, que lo sobrestima) + margen FCF − SBC -72.9% = -25, ya en el tramo más bajo",
-            "sign": "-4",
-            "tone": "neg",
-            "value_txt": "≤ -25"
-          }
-        ]
+        "scored": []
       },
       "version": 1
     },
@@ -3158,47 +3137,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": false,
-                  "metric": "EV/Ventas",
-                  "reason": "Barato por ventas (3.1x)",
-                  "sign": "+4",
-                  "state": "con_dato",
-                  "tone": "pos",
-                  "value": "3.06x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Regla de 40",
-                  "reason": "Crecimiento no significativo (año base anómalo); con su techo (48.1%, la tasa desde el año anómalo, que lo sobrestima) + margen FCF − SBC -72.9% = -25, ya en el tramo más bajo.",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "≤ -25"
-                },
-                {
-                  "in_block": false,
-                  "metric": "No aplica",
-                  "reason": "DCF: No aplica a empresas en crecimiento sin beneficio con FCF negativo: no hay flujo que descontar; EV/EBITDA: No aplica a empresas en crecimiento sin beneficio: EBITDA negativo o nulo, sin resultado operativo que capitalizar; P/E, PEG: No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
-                  "sign": "n/a",
-                  "state": "no_aplica",
-                  "tone": "neu",
-                  "value": "P/E, EV/EBITDA, PEG, DCF"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
-              "text": null,
-              "tone": "warn"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3290,7 +3228,7 @@
             }
           ],
           "coverage_notes": [],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -3797,6 +3735,7 @@
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado −$3.23B, normalizado −$3.60B (no recurrentes 11.3% del beneficio; pico de resultado no operativo (inferida, confianza media): $366.17M netos; pico de resultado no operativo (inferida, confianza media): −$158.40M netos, bajo el umbral, no aplicada). El score usa el beneficio normalizado.",
+        "pe_ttm_row": null,
         "premortem": null,
         "reference_note": "Referencia: industria «Automóviles y camiones»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 165 empresas (la de EE. UU. no es representativa: dominada por pocas empresas de múltiplo extremo: P/E agregado 119.6x frente a 64.3x de media) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Rivian Automotive, que pesa el 1 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": null,
@@ -4065,16 +4004,10 @@
           "note": "Precio sin veredicto: beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "EV/Ventas · 3.06x",
-              "tone": "pos",
-              "value": 4
-            },
-            {
-              "kind": "signed",
-              "label": "Regla de 40 · ≤ -25",
-              "tone": "neg",
-              "value": -4
+              "detail": "beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido",
+              "kind": "fact",
+              "label": "P/E normalizado (12 meses)",
+              "text": "sin dato"
             }
           ],
           "score": null,

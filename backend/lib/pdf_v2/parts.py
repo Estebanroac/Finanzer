@@ -776,8 +776,11 @@ class BarList(Flowable):
             c.setFillColor(T.INK)
             for k, ln in enumerate(lines):
                 c.drawString(0, mid - 3.3 + (len(lines) - 1) * self.LINE / 2 - k * self.LINE, ln)
-            c.setFillColor(T.NEUTRAL)
-            c.roundRect(bar_x, mid - 3, bar_w, 6, 3, stroke=0, fill=1)
+            if tone == "sin_barra":       # cierre de la 1.0: una cifra (la regla L1), sin barra que medir
+                frac = None
+            else:
+                c.setFillColor(T.NEUTRAL)
+                c.roundRect(bar_x, mid - 3, bar_w, 6, 3, stroke=0, fill=1)
             if frac is not None and frac > 0:
                 tn = T.tone(tone)
                 c.setFillColor(T.TONE_TEXT[tn] if tn != "neutral" else self.neutral)

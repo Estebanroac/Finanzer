@@ -316,8 +316,12 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
 
 
 def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):
-    text = fb.pdf_text(outputs_by_env("panel")["V"][1]).replace("\n", " ")
-    assert "Bloque de múltiplos" in text and "(-4)" in text and "reescalados a ±1" in text
+    # cierre de la 1.0 (9-nov-2026): con la regla L1 el bloque de múltiplos no forma la nota de precio; el informe no
+    # lo muestra (ni el desglose ni el anexo). El cálculo sigue en el análisis, como lectura.
+    a, pdf = outputs_by_env("panel")["V"]
+    text = fb.pdf_text(pdf).replace("\n", " ")
+    assert "Bloque de múltiplos" not in text and "reescalados a ±1" not in text
+    assert any(x.get("metric") == "Bloque de múltiplos" for x in a["score"]["breakdown"]["Valoración"]["adjustments"])
 
 
 # ─────────────────────────── reportado / normalizado ───────────────────────────

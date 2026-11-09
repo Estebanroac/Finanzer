@@ -32,11 +32,6 @@
     "valuation": [
       {
         "category": "Valoración",
-        "detail": "El mercado paga 18.2x beneficios, un +19% sobre la referencia de sus pares del universo (15.3x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
-        "reason": "Prima sobre sus pares — P/E 18.2x"
-      },
-      {
-        "category": "Valoración",
         "detail": "Cotiza a 8.5x EBITDA frente a 12.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
         "reason": "EV/EBITDA barato — 8.5x"
       }
@@ -1163,10 +1158,6 @@
           "text": "estados de Yahoo (yfinance): 38 campos; Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 3 (BPA estimado, payout, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.33 × 6 (máximo con 3) = +2.0, redondeado a +2."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: Apparel, Damodaran; perfil de Yahoo Finance: industria Luxury Goods, sector Consumer Cyclical."
         }
@@ -1940,12 +1931,7 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 3 lecturas en una escala de −1 a +1 (P/E -0.50; P/FCF +0.50; EV/EBITDA +1.00): +0.33, que suma +2.0 puntos de un máximo de ±6; sin dato: Forward P/E.",
-          "sign": "+2",
-          "tone": "pos"
-        },
+        "block": null,
         "dcf_composition": {
           "explicit_pct": 44.5,
           "terminal_pct": 55.5
@@ -2022,7 +2008,7 @@
             "key": "pe",
             "label": "P/E (último ejercicio)",
             "reading": "Prima moderada",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": "P/E (último ejercicio) de 18.2x frente a 15.3x de sus pares del universo (+19%): prima moderada.",
             "tone": "warn",
@@ -2074,7 +2060,7 @@
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": "EV/EBITDA de 8.5x frente a 12.4x de sus pares del universo (-31%): descuento.",
             "tone": "pos",
@@ -2091,7 +2077,7 @@
             "key": "pfcf",
             "label": "P/FCF",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2540,7 +2526,7 @@
       },
       "roe": {
         "label": "Competitivo",
-        "text": "el ROE (último ejercicio) de 16.1% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto)",
+        "text": "el ROE (último ejercicio) de 16.1% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto); frente a la referencia de sus pares del universo (37.5%), en cambio, queda muy por debajo (-57%)",
         "tone": "neu"
       },
       "roic_wacc_spread": {
@@ -2557,7 +2543,7 @@
           "red_flags": 0,
           "strengths": 5,
           "unmeasured": null,
-          "valuation": 2,
+          "valuation": 1,
           "warnings": 2
         },
         "groups": [
@@ -2624,11 +2610,6 @@
           },
           {
             "items": [
-              {
-                "category": "Valoración",
-                "detail": "El mercado paga 18.2x beneficios, un +19% sobre la referencia de sus pares del universo (15.3x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
-                "reason": "Prima sobre sus pares — P/E 18.2x"
-              },
               {
                 "category": "Valoración",
                 "detail": "Cotiza a 8.5x EBITDA frente a 12.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
@@ -2910,65 +2891,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": true,
-                  "metric": "P/E frente al sector",
-                  "reason": "Prima (18.2x frente a 15.3x)",
-                  "sign": "(-2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "18.17x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "P/FCF",
-                  "reason": "Bueno (13.8x)",
-                  "sign": "(+2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "13.78x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "EV/EBITDA frente al sector",
-                  "reason": "Muy barato (8.5x frente a 12.4x)",
-                  "sign": "(+4)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "8.47x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 3 lecturas en una escala de −1 a +1 (P/E -0.50; P/FCF +0.50; EV/EBITDA +1.00): +0.33, que suma +2.0 puntos de un máximo de ±6; sin dato: Forward P/E.",
-                  "sign": "+2",
-                  "state": "con_dato",
-                  "tone": "pos",
-                  "value": "3 múltiplos"
-                },
-                {
-                  "in_block": false,
-                  "metric": "DCF directo (valor frente al precio)",
-                  "reason": "En precio por DCF (fiabilidad alta)",
-                  "sign": "0",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "+8%"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 60.0,
-              "score": 12,
-              "score_txt": "12 / 20",
-              "text": null,
-              "tone": "pos"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3060,7 +2982,7 @@
             }
           ],
           "coverage_notes": [],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -3232,7 +3154,7 @@
           ]
         ],
         "figures_title": "Cifras del ejercicio cerrado el 31 de diciembre de 2025 (FY)",
-        "intro": "El ROE (último ejercicio) de 16.1% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (13.1%) supera al WACC (8.7%) en +4.4 pp, señal de creación de valor.",
+        "intro": "El ROE (último ejercicio) de 16.1% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto); frente a la referencia de sus pares del universo (37.5%), en cambio, queda muy por debajo (-57%). El ROIC (13.1%) supera al WACC (8.7%) en +4.4 pp, señal de creación de valor.",
         "quality_readings": [
           {
             "key": "dupont",
@@ -3450,7 +3372,7 @@
         ],
         "dcf_missing": null,
         "dcf_params": "Parámetros del modelo — WACC 8.73% · crecimiento 2.54% (CAGR de ingresos a 3 años (+0.7%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+4.4%, tasas base de Mauboussin): la media de los dos) · terminal 2.50% · el valor terminal aporta el 56% del valor total.",
-        "dcf_reliability": "Fiabilidad del DCF: alta. Aporta +0 puntos a Valoración (máximo ±4 con fiabilidad alta).",
+        "dcf_reliability": "Fiabilidad del DCF: alta.",
         "dcf_reliability_level": "alta",
         "dcf_reliability_tone": "pos",
         "intrinsic": {
@@ -3514,10 +3436,11 @@
             }
           ]
         },
-        "intro": "El mercado paga 18.2x beneficios, un +19% frente a la referencia de sus pares del universo (15.3x). El FCF yield de 7.3% es atractivo. Cotiza 53% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
+        "intro": "El FCF yield de 7.3% es atractivo. Cotiza 53% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
         "market_note": null,
         "normalization_note": null,
+        "pe_ttm_row": null,
         "premortem": null,
         "reference_note": "Referencia: mediana de 3 pares del universo de la industria «Confección y moda» de todas las regiones (en la suya hay 0) (Yahoo Finance, 28 de octubre de 2026); Damodaran clasifica a la empresa en esa industria (símbolo). No el agregado de A. Damodaran (Europa, 109 empresas): sin sus cifras al 5 de enero de 2026: cotiza en EUR y los totales de Damodaran son en USD. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
@@ -3872,7 +3795,7 @@
         "red_flags": 0,
         "strengths": 5,
         "unmeasured": null,
-        "valuation": 2,
+        "valuation": 1,
         "warnings": 2
       },
       "cards": [
@@ -3950,16 +3873,10 @@
           "note": "Precio sin veredicto: sin estados de SEC EDGAR.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 3 múltiplos",
-              "tone": "pos",
-              "value": 2
-            },
-            {
-              "kind": "signed",
-              "label": "DCF directo (valor frente al precio) · +8%",
-              "tone": "neu",
-              "value": 0
+              "detail": "sin estados de SEC EDGAR",
+              "kind": "fact",
+              "label": "P/E (12 meses)",
+              "text": "sin dato"
             }
           ],
           "score": null,
@@ -4032,7 +3949,7 @@
         },
         {
           "label": "VALORACIÓN FRENTE A SU SECTOR",
-          "text": "El mercado paga 18.2x beneficios, un +19% frente a la referencia de sus pares del universo (15.3x). El precio cotiza en torno al valor justo estimado por el DCF (+8%)."
+          "text": "El precio cotiza en torno al valor justo estimado por el DCF (+8%)."
         },
         {
           "label": "CONTEXTO DE MERCADO",

@@ -194,6 +194,13 @@ export const DEFINITIONS: Record<string, Definition> = {
     description: "P/E calculado sobre el beneficio sin partidas no recurrentes.",
     tip: "Se muestra cuando las partidas extraordinarias distorsionan el P/E reportado.",
   },
+  // cierre de la 1.0 (9-nov-2026): el único P/E del informe, el de la regla L1
+  pe_l1: {
+    title: "P/E normalizado (12 meses)",
+    description: "Precio frente al beneficio de los últimos doce meses sin partidas no recurrentes; se compara con la mediana de su grupo en el universo, según la regla L1, no con la industria.",
+    formula: "Capitalización / beneficio normalizado de 12 meses (en los REIT, P/FFO)",
+    tip: "Es el único P/E del informe: decide la valoración frente a su sector (baja, en línea o alta).",
+  },
   forward_pe: {
     title: "Forward P/E",
     description: "Precio dividido por el beneficio estimado para los próximos doce meses.",

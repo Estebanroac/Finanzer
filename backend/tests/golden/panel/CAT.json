@@ -2130,10 +2130,6 @@
           "text": "estados de Yahoo (yfinance): 32 campos; SEC EDGAR: 3 (inversión (capex), country, beneficio operativo); Finnhub: 8 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 15 campos; sin dato utilizable (ausente o de otro periodo): 4 (arrendamientos financieros, papel comercial, BPA estimado, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -1.00 × 4 (máximo con 2) = -4.0, redondeado a -4."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: Construction Supplies, Damodaran; perfil de Yahoo Finance: industria Farm & Heavy Construction Machinery, sector Industrials."
         }
@@ -2909,12 +2905,7 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF -1.00; EV/EBITDA -1.00): -1.00, que suma -4.0 puntos de un máximo de ±4.",
-          "sign": "-4",
-          "tone": "neg"
-        },
+        "block": null,
         "dcf_composition": {
           "explicit_pct": 53.0,
           "terminal_pct": 47.0
@@ -2981,15 +2972,6 @@
           ]
         },
         "multiples": [
-          {
-            "fmt": "mult",
-            "higher_is_better": false,
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "role": "informative",
-            "state": "no_aplica",
-            "text": "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo."
-          },
           {
             "fmt": "mult",
             "higher_is_better": false,
@@ -3077,28 +3059,7 @@
             "value_txt": "3.11%"
           }
         ],
-        "scored": [
-          {
-            "in_block": true,
-            "key": "p_fcf_normalizado",
-            "label": "P/FCF normalizado",
-            "reading": "Desfavorable",
-            "reason": "Muy alto (36.9x) (ciclo incompleto: 4 ejercicios)",
-            "sign": "(-4)",
-            "tone": "neg",
-            "value_txt": "36.94x"
-          },
-          {
-            "in_block": true,
-            "key": "ev_ebitda_normalizado",
-            "label": "EV/EBITDA normalizado",
-            "reading": "Desfavorable",
-            "reason": "Muy caro (25.9x frente a 10.9x) (ciclo incompleto: 4 ejercicios)",
-            "sign": "(-4)",
-            "tone": "neg",
-            "value_txt": "25.91x"
-          }
-        ]
+        "scored": []
       },
       "version": 1
     },
@@ -3122,7 +3083,7 @@
       "level": "consistente",
       "plain": [],
       "reasons": [],
-      "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−4 puntos).",
+      "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia.",
       "tone": "pos",
       "verdict_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)"
     },
@@ -3146,7 +3107,7 @@
       "level": "consistente",
       "plain": [],
       "reasons": [],
-      "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−4 puntos).",
+      "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia.",
       "tone": "pos",
       "verdict_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)"
     },
@@ -3314,8 +3275,8 @@
       "price": {
         "contracted": false,
         "level": "alta",
-        "note": "P/E 32.0x frente a 26.8x de su sector; en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "P/E 32.0x frente a 26.8x de su sector · en la frontera con «razonable» (a 1 punto)",
+        "note": "P/E 32.0x frente a 26.8x de su sector; en la frontera con «en línea» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "P/E 32.0x frente a 26.8x de su sector · en la frontera con «en línea» (a 1 punto)",
         "question": "¿cómo está frente a su sector?",
         "raw": 33,
         "score": 33,
@@ -4121,65 +4082,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": true,
-                  "metric": "P/FCF normalizado",
-                  "reason": "Muy alto (36.9x) (ciclo incompleto: 4 ejercicios)",
-                  "sign": "(-4)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "36.94x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "EV/EBITDA normalizado frente al sector",
-                  "reason": "Muy caro (25.9x frente a 10.9x) (ciclo incompleto: 4 ejercicios)",
-                  "sign": "(-4)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "25.91x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF -1.00; EV/EBITDA -1.00): -1.00, que suma -4.0 puntos de un máximo de ±4.",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "2 múltiplos"
-                },
-                {
-                  "in_block": false,
-                  "metric": "DCF inverso (lo que exige el precio)",
-                  "reason": "El DCF directo tiene fiabilidad baja; se usa el DCF inverso: El precio actual exige que el FCF de mantenimiento por acción crezca un 15.8% anual durante 10 años (21.8% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 6.2% anual. Lo sostuvo 10 años el 5% de las empresas comparables (ventas de 50 a 100 mil millones, todas las industrias).: el FCF de entrada es inferido (fuente: derivado), no sale de los estados; empresa cíclica: el FCF depende de la fase del ciclo.",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "muy exigente"
-                },
-                {
-                  "in_block": false,
-                  "metric": "No aplica",
-                  "reason": "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)",
-                  "sign": "n/a",
-                  "state": "no_aplica",
-                  "tone": "neu",
-                  "value": "P/E, PEG"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 10.0,
-              "score": 2,
-              "score_txt": "2 / 20",
-              "text": null,
-              "tone": "neg"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -4271,7 +4173,7 @@
             }
           ],
           "coverage_notes": [],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -4728,7 +4630,7 @@
         ],
         "dcf_missing": null,
         "dcf_params": "Parámetros del modelo — WACC 10.22% · crecimiento 0.43% (ciclo medio de los ingresos de pico a pico) · terminal 2.50% · el valor terminal aporta el 47% del valor total · FCF de mantenimiento $9.32B (flujo operativo − D&A como capex de mantenimiento, promedio de 4 ejercicios), frente al FCF normalizado $10.54B (margen FCF promedio 14.10% × ingresos actuales, que incluye el capex de expansión; ciclo incompleto: 4 ejercicios): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio.",
-        "dcf_reliability": "Fiabilidad del DCF: baja (el FCF de entrada es inferido (fuente: derivado), no sale de los estados; empresa cíclica: el FCF depende de la fase del ciclo). El DCF directo tiene fiabilidad baja: el método intrínseco es el DCF inverso, que aporta -4 puntos a Valoración.",
+        "dcf_reliability": "Fiabilidad del DCF: baja (el FCF de entrada es inferido (fuente: derivado), no sale de los estados; empresa cíclica: el FCF depende de la fase del ciclo). El DCF directo tiene fiabilidad baja: el método intrínseco es el DCF inverso, que se lee sin puntuar (el precio es la regla L1).",
         "dcf_reliability_level": "baja",
         "dcf_reliability_tone": "neg",
         "intrinsic": {
@@ -4785,6 +4687,17 @@
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $10.84B, normalizado $10.75B (no recurrentes 0.9% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $98.69M netos; cargos que presenta el emisor y no recogen las filas de Yahoo (deterioros, reestructuración, litigios, I+D adquirida) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta). El score usa el beneficio normalizado.",
+        "pe_ttm_row": {
+          "bench": "—",
+          "gap": "—",
+          "key": "pe",
+          "label": "P/E (TTM)",
+          "reading": "No aplica a empresas cíclicas",
+          "state": "no_aplica",
+          "text": "el resultado de un solo ejercicio depende de la fase del ciclo.",
+          "tone": "neu",
+          "value": "—"
+        },
         "premortem": {
           "items": [
             "el FCF de mantenimiento por acción creciera al menos un 15.8% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 6.2% anual en 10 años (FY2015–FY2025)",
@@ -4808,20 +4721,20 @@
             }
           ],
           "method": "Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan (2021) por tamaño e industria; segunda: la historia propia.",
-          "role": "Es el método intrínseco del veredicto: el DCF directo tiene fiabilidad baja (aporta -4 puntos a Valoración).",
+          "role": "Es el método intrínseco de la lectura de valoración: el DCF directo tiene fiabilidad baja.",
           "title": "Crecimiento que exige el precio (DCF inverso)"
         },
         "rows": [
           {
-            "bench": "—",
-            "gap": "—",
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "No aplica a empresas cíclicas",
-            "state": "no_aplica",
-            "text": "el resultado de un solo ejercicio depende de la fase del ciclo.",
-            "tone": "neu",
-            "value": "—"
+            "bench": "26.80x",
+            "gap": "+20%",
+            "key": "pe_l1",
+            "label": "P/E normalizado (12 meses)",
+            "reading": "Valoración alta",
+            "state": "con_dato",
+            "text": "Referencia: la mediana de industria en el universo, según la regla L1, no la industria.",
+            "tone": "warn",
+            "value": "32.04x"
           },
           {
             "bench": "—",
@@ -4899,17 +4812,6 @@
             "text": null,
             "tone": null,
             "value": "3.11%"
-          },
-          {
-            "bench": "—",
-            "gap": "—",
-            "key": "earnings_yield",
-            "label": "Earnings Yield (E/P)",
-            "reading": "No aplica a empresas cíclicas",
-            "state": "no_aplica",
-            "text": "el resultado de un solo ejercicio depende de la fase del ciclo.",
-            "tone": "neu",
-            "value": "—"
           },
           {
             "bench": "—",
@@ -5248,19 +5150,24 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura.",
         "price": {
           "level": "alta",
-          "note": "P/E 32.0x (sin partidas no recurrentes) frente a la mediana de industria (26.8x), 1.20 veces: en el tercio más alto del universo; en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+          "note": "P/E 32.0x (sin partidas no recurrentes) frente a la mediana de industria (26.8x), 1.20 veces: en el tercio más alto del universo; en la frontera con «en línea» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 2 múltiplos",
-              "tone": "neg",
-              "value": -4
+              "kind": "fact",
+              "label": "P/E normalizado (12 meses)",
+              "short": "P/E normalizado",
+              "text": "32.0x"
             },
             {
-              "kind": "signed",
-              "label": "DCF inverso (lo que exige el precio) · muy exigente",
-              "tone": "neg",
-              "value": -4
+              "kind": "fact",
+              "label": "Mediana de industria",
+              "short": "Mediana de su grupo",
+              "text": "26.8x"
+            },
+            {
+              "kind": "fact",
+              "label": "Tercio del universo",
+              "text": "más alto"
             }
           ],
           "score": 33,
@@ -5313,7 +5220,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · valoración alta frente a su sector (consistencia consistente: DCF inverso y los múltiplos coinciden). Calidad 75/100 · precio 33/100 (P/E 32.0x frente a 26.8x; en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad sólida · valoración alta frente a su sector (consistencia consistente: DCF inverso y los múltiplos coinciden). Calidad 75/100 · precio 33/100 (P/E 32.0x frente a 26.8x; en la frontera con «en línea» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -7196,9 +7103,9 @@
       "sin partidas no recurrentes"
     ],
     "border": {
-      "neighbor": "razonable",
+      "neighbor": "en línea",
       "points": 1,
-      "text": "En la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+      "text": "En la frontera con «en línea» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
     },
     "confidence": "baja",
     "contracted": false,

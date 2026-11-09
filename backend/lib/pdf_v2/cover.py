@@ -117,8 +117,11 @@ def score_cards(a: Dict[str, Any], mini: bool = True) -> List[P.ScoreScale]:
     per_cat = qcats[0]["max"] if qcats else None
 
     q_mini = [(c["name"], c["score_txt"], c.get("tone")) for c in qcats]
-    p_mini = [(r["label"].split(" · ")[0], _signed(r["value"]), r.get("tone")) for r in comp["price"]["rows"]]
-    if valuation:
+    # cierre de la 1.0: con la regla L1 las filas son sus cifras («fact»), sin la Valoración /20 del sistema anterior
+    _facts = any(r.get("kind") == "fact" for r in comp["price"]["rows"])
+    p_mini = [(r.get("short") or r["label"], r["text"], None) if r.get("kind") == "fact" else
+              (r["label"].split(" · ")[0], _signed(r["value"]), r.get("tone")) for r in comp["price"]["rows"]]
+    if valuation and not _facts:
         p_mini.append(("Valoración", valuation["score_txt"], valuation.get("tone")))
     if p.get("contracted"):
         p_mini.append(("Ajuste por confianza", f"{p.get('raw', '—')} → {p.get('score', '—')}", None))

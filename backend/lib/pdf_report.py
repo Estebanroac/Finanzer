@@ -733,6 +733,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     def _bar_row(r):
         if r["kind"] == "nc":
             return [Paragraph(_esc(r["label"]), _lab_st), Paragraph("no concluyente", _lab_st), Paragraph("n/c", _num_st)]
+        if r["kind"] == "fact":     # cierre de la 1.0: las cifras de la regla L1, sin barra
+            return [Paragraph(_esc(r.get("short") or r["label"]), _lab_st), "", Paragraph(_esc(r["text"]), _num_st)]
         if r["kind"] == "signed":   # componente de Valoración: ajuste ± sobre la base 10/20
             col = BRAND if r["tone"] == 'pos' else RED if r["tone"] == 'neg' else MUTED
             return [Paragraph(_esc(r["label"]), _lab_st),

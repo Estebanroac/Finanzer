@@ -59,6 +59,10 @@ DECLARED = [
     (r"\.cover\.categories\[\]\.items\[\]\.text", "etiqueta"),
     (r"\.sections\.solvency\.balance", "etiqueta"),
     (r"\.charts\.valuation\.scored\[\]\.reason", "etiqueta"),
+    # cierre de la 1.0 (9-nov-2026): las cifras de la regla L1 bajo la nota de precio (rótulo corto y valor) y el motivo
+    # de que falten, que la tarjeta pone tras el rótulo
+    (r"\.summary\.composition\.price\.rows\[\]\.(short|text)", "etiqueta"),
+    (r"\.summary\.composition\.price\.rows\[\]\.detail", "fragmento"),
     (r"\.sections\.profitability\.figures\[\]\[\]", "etiqueta"),
     (r"\.sections\.valuation\.sensitivity\.band_labels\[\]", "etiqueta"),
     (r"\.sections\.historical\.not_applicable\.\w+", "etiqueta"),

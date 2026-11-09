@@ -38,11 +38,6 @@
     "valuation": [
       {
         "category": "Valoración",
-        "detail": "Paga 9.2x beneficios normalizados frente a 16.0x de sus pares del universo (-42%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-        "reason": "Cotiza con descuento — P/E normalizado 9.2x"
-      },
-      {
-        "category": "Valoración",
         "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
         "reason": "EV/EBITDA barato — 9.6x"
       }
@@ -1607,10 +1602,6 @@
           "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamientos financieros, BPA estimado, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.75 × 4 (máximo con 2) = +3.0, redondeado a +3."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: Auto & Truck, Damodaran; perfil de Yahoo Finance: industria Auto Manufacturers, sector Consumer Cyclical."
         }
@@ -2378,35 +2369,13 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 2 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.00 → +0.50; EV/EBITDA +1.00): +0.75, que suma +3.0 puntos de un máximo de ±4; sin dato: P/FCF.",
-          "sign": "+3",
-          "tone": "pos"
-        },
+        "block": null,
         "dcf_composition": null,
         "fair_value": {
           "state": "no_significativo",
           "text": "FCF base −$7.86B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo."
         },
         "multiples": [
-          {
-            "bench": 15.9871,
-            "bench_txt": "15.99x",
-            "fmt": "mult",
-            "gap_pct": -45.9848962038,
-            "gap_txt": "-46%",
-            "higher_is_better": false,
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "Descuento profundo",
-            "role": "block",
-            "state": "con_dato",
-            "text": "P/E (TTM) de 8.6x frente a 16.0x de sus pares del universo (-46%): descuento profundo.",
-            "tone": "pos",
-            "value": 8.63544865901,
-            "value_txt": "8.64x"
-          },
           {
             "bench": null,
             "bench_txt": "—",
@@ -2417,7 +2386,7 @@
             "key": "forward_pe",
             "label": "Forward P/E",
             "reading": "—",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": null,
             "tone": null,
@@ -2460,7 +2429,7 @@
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
             "tone": "pos",
@@ -2686,10 +2655,10 @@
           "value": "$226.07B"
         },
         {
-          "key": "pe",
-          "label": "P/E reportado (TTM)",
+          "key": "pe_l1",
+          "label": "P/E (12 meses)",
           "state": "con_dato",
-          "value": "8.64x"
+          "value": "8.84x"
         },
         {
           "key": "roe",
@@ -3224,7 +3193,7 @@
           "red_flags": 0,
           "strengths": 3,
           "unmeasured": null,
-          "valuation": 2,
+          "valuation": 1,
           "warnings": 3
         },
         "groups": [
@@ -3302,11 +3271,6 @@
           },
           {
             "items": [
-              {
-                "category": "Valoración",
-                "detail": "Paga 9.2x beneficios normalizados frente a 16.0x de sus pares del universo (-42%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-                "reason": "Cotiza con descuento — P/E normalizado 9.2x"
-              },
               {
                 "category": "Valoración",
                 "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
@@ -3567,65 +3531,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": true,
-                  "metric": "P/E normalizado frente al sector",
-                  "reason": "Muy barato (9.2x frente a 16.0x sector)",
-                  "sign": "(+5)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "9.23x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "Forward P/E",
-                  "reason": "Sin compresión del P/E normalizado (9x → 9x forward)",
-                  "sign": "(0)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "9.29x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "EV/EBITDA frente al sector",
-                  "reason": "Muy barato (9.6x frente a 24.6x)",
-                  "sign": "(+4)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "9.59x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 2 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.00 → +0.50; EV/EBITDA +1.00): +0.75, que suma +3.0 puntos de un máximo de ±4; sin dato: P/FCF.",
-                  "sign": "+3",
-                  "state": "con_dato",
-                  "tone": "pos",
-                  "value": "3 múltiplos"
-                },
-                {
-                  "in_block": false,
-                  "metric": "DCF inverso (flujo de mantenimiento)",
-                  "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 10.8% anual durante 10 años (14.6% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 8% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "muy exigente"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
-              "text": null,
-              "tone": "warn"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3710,7 +3615,7 @@
           "coverage_notes": [
             "cobertura baja en Crecimiento"
           ],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -4193,10 +4098,21 @@
             }
           ]
         },
-        "intro": "El mercado paga 8.6x beneficios, un -46% frente a la referencia de sus pares del universo (16.0x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad. La compañía quema caja libre a nivel operativo. Cotiza 39% por debajo del número de Graham, criterio clásico de valor.",
+        "intro": "La compañía quema caja libre a nivel operativo. Cotiza 39% por debajo del número de Graham, criterio clásico de valor.",
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $28.97B, normalizado $27.11B (no recurrentes 6.4% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $1.86B netos). El score usa el beneficio normalizado.",
+        "pe_ttm_row": {
+          "bench": "15.99x",
+          "gap": "-46%",
+          "key": "pe",
+          "label": "P/E (TTM)",
+          "reading": "Descuento profundo",
+          "state": "con_dato",
+          "text": "P/E (TTM) de 8.6x frente a 16.0x de sus pares del universo (-46%): descuento profundo.",
+          "tone": "pos",
+          "value": "8.64x"
+        },
         "premortem": {
           "items": [
             "el flujo de mantenimiento (flujo operativo − D&A) por acción creciera menos del 10.8% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 49.8% anual en 10 años (FY2016–FY2026)",
@@ -4215,20 +4131,20 @@
             }
           ],
           "method": "Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan (2021) por tamaño e industria; segunda: la historia propia.",
-          "role": "Es el método intrínseco del veredicto: el DCF directo no es significativo (FCF − SBC ≤ 0), así que se valora el flujo de mantenimiento (aporta -4 puntos a Valoración).",
+          "role": "Es el método intrínseco de la lectura de valoración: el DCF directo no es significativo (FCF − SBC ≤ 0), así que se valora el flujo de mantenimiento.",
           "title": "Crecimiento que exige el precio (DCF inverso)"
         },
         "rows": [
           {
-            "bench": "15.99x",
-            "gap": "-46%",
-            "key": "pe",
-            "label": "P/E (TTM)",
-            "reading": "Descuento profundo",
+            "bench": "19.12x",
+            "gap": "-54%",
+            "key": "pe_l1",
+            "label": "P/E (12 meses)",
+            "reading": "Valoración baja",
             "state": "con_dato",
-            "text": "P/E (TTM) de 8.6x frente a 16.0x de sus pares del universo (-46%): descuento profundo.",
+            "text": "Referencia: la mediana de consumo discrecional en el universo, según la regla L1, no la industria.",
             "tone": "pos",
-            "value": "8.64x"
+            "value": "8.84x"
           },
           {
             "bench": "—",
@@ -4310,17 +4226,6 @@
           {
             "bench": "—",
             "gap": "—",
-            "key": "earnings_yield",
-            "label": "Earnings Yield (E/P)",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
-            "tone": null,
-            "value": "11.58%"
-          },
-          {
-            "bench": "—",
-            "gap": "—",
             "key": "dividend_yield",
             "label": "Dividend Yield",
             "reading": "—",
@@ -4382,7 +4287,7 @@
         "red_flags": 0,
         "strengths": 3,
         "unmeasured": null,
-        "valuation": 2,
+        "valuation": 1,
         "warnings": 3
       },
       "cards": [
@@ -4420,15 +4325,15 @@
           "value": "12.57"
         },
         {
-          "bench": "vs pares 15.99x",
-          "delta": "-46%",
-          "key": "pe",
-          "label": "P/E reportado (TTM)",
-          "pill": "Gran descuento",
+          "bench": "vs mediana de su grupo 19.12x",
+          "delta": "-54%",
+          "key": "pe_l1",
+          "label": "P/E (12 meses)",
+          "pill": "Valoración baja",
           "state": "con_dato",
           "tone": "pos",
           "unit": "x",
-          "value": "8.64"
+          "value": "8.84"
         },
         {
           "bench": "",
@@ -4460,16 +4365,21 @@
           "note": "P/E 8.8x frente a la mediana de consumo discrecional (19.1x), 0.46 veces: en el tercio más bajo del universo.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 3 múltiplos",
-              "tone": "pos",
-              "value": 3
+              "kind": "fact",
+              "label": "P/E (12 meses)",
+              "short": "P/E",
+              "text": "8.8x"
             },
             {
-              "kind": "signed",
-              "label": "DCF inverso (flujo de mantenimiento) · muy exigente",
-              "tone": "neg",
-              "value": -4
+              "kind": "fact",
+              "label": "Mediana de consumo discrecional",
+              "short": "Mediana de su grupo",
+              "text": "19.1x"
+            },
+            {
+              "kind": "fact",
+              "label": "Tercio del universo",
+              "text": "más bajo"
             }
           ],
           "score": 94,
@@ -4542,7 +4452,7 @@
         },
         {
           "label": "VALORACIÓN FRENTE A SU SECTOR",
-          "text": "El mercado paga 8.6x beneficios, un -46% frente a la referencia de sus pares del universo (16.0x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad."
+          "text": "P/E 8.8x frente a la mediana de consumo discrecional (19.1x), 0.46 veces: en el tercio más bajo del universo."
         },
         {
           "label": "CONTEXTO DE MERCADO",

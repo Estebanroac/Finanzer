@@ -1554,10 +1554,6 @@
           "text": "estados de Yahoo (yfinance): 36 campos; SEC EDGAR: 2 (country, beneficio operativo); Finnhub: 8 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 2 (BPA estimado, caja total)."
         },
         {
-          "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1."
-        },
-        {
           "label": "Nombres originales de las fuentes",
           "text": "Industria de referencia: R.E.I.T., Damodaran; perfil de Yahoo Finance: industria REIT—Specialty, sector Real Estate."
         }
@@ -2097,12 +2093,7 @@
         }
       },
       "valuation": {
-        "block": {
-          "label": "Bloque de múltiplos",
-          "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
-          "sign": "+1",
-          "tone": "pos"
-        },
+        "block": null,
         "dcf_composition": null,
         "fair_value": {
           "state": "no_aplica",
@@ -2163,7 +2154,7 @@
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
-            "role": "block",
+            "role": "informative",
             "state": "con_dato",
             "text": "EV/EBITDA de 17.1x frente a 20.0x de su industria sin ella (-14%): descuento.",
             "tone": "pos",
@@ -2189,18 +2180,7 @@
             "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           }
         ],
-        "scored": [
-          {
-            "in_block": false,
-            "key": "p_ffo_reit",
-            "label": "P/FFO (REIT)",
-            "reading": "Favorable",
-            "reason": "Atractivo por FFO (15.0x)",
-            "sign": "+2",
-            "tone": "pos",
-            "value_txt": "15.05x"
-          }
-        ]
+        "scored": []
       },
       "version": 1
     },
@@ -2380,8 +2360,8 @@
           "value": "$83.59B"
         },
         {
-          "key": "p_ffo",
-          "label": "P/FFO",
+          "key": "pe_l1",
+          "label": "P/FFO (12 meses)",
           "state": "con_dato",
           "value": "15.05x"
         },
@@ -3147,65 +3127,6 @@
             },
             {
               "conclusive": true,
-              "group": "price",
-              "items": [
-                {
-                  "in_block": false,
-                  "metric": "P/FFO (REIT)",
-                  "reason": "Atractivo por FFO (15.0x)",
-                  "sign": "+2",
-                  "state": "con_dato",
-                  "tone": "pos",
-                  "value": "15.05x"
-                },
-                {
-                  "in_block": true,
-                  "metric": "EV/EBITDA frente al sector",
-                  "reason": "Atractivo (17.1x)",
-                  "sign": "(+2)",
-                  "state": "con_dato",
-                  "tone": "neu",
-                  "value": "17.07x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Bloque de múltiplos",
-                  "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
-                  "sign": "+1",
-                  "state": "con_dato",
-                  "tone": "pos",
-                  "value": "1 múltiplo"
-                },
-                {
-                  "in_block": false,
-                  "metric": "DCF inverso (FFO)",
-                  "reason": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.0% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción cayó un 8.6% anual. Lo sostuvo 10 años el 67% de las empresas comparables (ventas de 5 a 10 mil millones, otros sectores).",
-                  "sign": "-2",
-                  "state": "con_dato",
-                  "tone": "warn",
-                  "value": "exigente"
-                },
-                {
-                  "in_block": false,
-                  "metric": "No aplica",
-                  "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
-                  "sign": "n/a",
-                  "state": "no_aplica",
-                  "tone": "neu",
-                  "value": "P/E, P/FCF, PEG"
-                }
-              ],
-              "key": "Valoración",
-              "max": 20,
-              "name": "Valoración",
-              "pct": 55.0,
-              "score": 11,
-              "score_txt": "11 / 20",
-              "text": null,
-              "tone": "warn"
-            },
-            {
-              "conclusive": true,
               "group": "quality",
               "items": [
                 {
@@ -3297,7 +3218,7 @@
             }
           ],
           "coverage_notes": [],
-          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
+          "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; las categorías no concluyentes se excluyen y la puntuación se reescala a 100 sobre las demás. La valoración no es una categoría: es la regla L1 (el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura)."
         },
         "cards": [
           {
@@ -3712,6 +3633,7 @@
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $3.40B, normalizado $3.36B (no recurrentes 1.2% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta): $39.93M netos). El score usa el beneficio normalizado.",
+        "pe_ttm_row": null,
         "premortem": {
           "items": [
             "el FFO por acción cayera más de un 1.4% anual durante 10 años, lo que ya descuenta el precio; historia propia: su FFO por acción, −8.6% anual en 3 años",
@@ -3730,7 +3652,7 @@
             }
           ],
           "method": "Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan (2021) por tamaño e industria; segunda: la historia propia.",
-          "role": "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción (aporta -2 puntos a Valoración).",
+          "role": "Es el método intrínseco de la lectura de valoración: sin DCF directo, se valora el FFO por acción.",
           "title": "Crecimiento que exige el precio (DCF inverso)"
         },
         "rows": [
@@ -3968,13 +3890,13 @@
           "value": "—"
         },
         {
-          "bench": "",
-          "delta": "",
-          "key": "p_ffo",
-          "label": "P/FFO",
-          "pill": "Sin referencia",
+          "bench": "vs mediana de su grupo 19.93x",
+          "delta": "-25%",
+          "key": "pe_l1",
+          "label": "P/FFO (12 meses)",
+          "pill": "Valoración baja",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "pos",
           "unit": "x",
           "value": "15.05"
         },
@@ -4008,22 +3930,21 @@
           "note": "P/FFO 15.0x frente a la mediana de los REIT (19.9x), 0.75 veces: en el tercio más bajo del universo.",
           "rows": [
             {
-              "kind": "signed",
-              "label": "P/FFO (REIT) · 15.05x",
-              "tone": "pos",
-              "value": 2
+              "kind": "fact",
+              "label": "P/FFO (12 meses)",
+              "short": "P/FFO",
+              "text": "15.0x"
             },
             {
-              "kind": "signed",
-              "label": "Bloque de múltiplos · 1 múltiplo",
-              "tone": "pos",
-              "value": 1
+              "kind": "fact",
+              "label": "Mediana de los REIT",
+              "short": "Mediana de su grupo",
+              "text": "19.9x"
             },
             {
-              "kind": "signed",
-              "label": "DCF inverso (FFO) · exigente",
-              "tone": "neg",
-              "value": -2
+              "kind": "fact",
+              "label": "Tercio del universo",
+              "text": "más bajo"
             }
           ],
           "score": 76,

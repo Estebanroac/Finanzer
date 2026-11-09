@@ -62,13 +62,15 @@ def test_multiples_role_matches_the_score_breakdown(analyses):
     by = dict(analyses)
     for name, a in analyses:
         inv.chart_multiples_role_matches_breakdown(a, None)
-    nf = {m["key"]: m["role"] for m in by["panel/NFLX"]["display"]["charts"]["valuation"]["multiples"]}
-    assert nf["pb"] == nf["fcf_yield"] == "informative" and nf["pe"] == nf["pfcf"] == "block"
-    fcx = by["panel/FCX"]["display"]["charts"]["valuation"]
-    assert {s["key"] for s in fcx["scored"] if s["in_block"]} == {"p_fcf_normalizado", "ev_ebitda_normalizado"}
-    assert {m["key"]: m["role"] for m in fcx["multiples"]}["pfcf"] == "informative"
-    o = by["panel/O"]["display"]["charts"]["valuation"]
-    assert [s["key"] for s in o["scored"] if not s["in_block"]] == ["p_ffo_reit"]
+    # cierre de la 1.0 (9-nov-2026): con la regla L1 ningún múltiplo puntúa ni forma un bloque en la gráfica: todos son
+    # informativos y la lista de lo que puntúa queda vacía. El P/E TTM no se dibuja (el único P/E es el de la L1).
+    for sym in ("NFLX", "FCX", "O"):
+        V = by[f"panel/{sym}"]["display"]["charts"]["valuation"]
+        assert {m["role"] for m in V["multiples"]} <= {"informative"} and V["scored"] == [] and not V.get("block"), sym
+        # el P/E TTM no se dibuja con cifra (en un REIT queda «No aplica», sin valor: su regla L1 usa el P/FFO)
+        assert all(m["state"] != "con_dato" for m in V["multiples"] if m["key"] == "pe"), sym
+    # el cálculo del bloque sigue en el desglose del motor
+    assert any(x.get("in_block") for x in by["panel/NFLX"]["score"]["breakdown"]["Valoración"]["adjustments"])
 
 
 def test_upside_phrase_follows_the_sensitivity_grid(analyses):

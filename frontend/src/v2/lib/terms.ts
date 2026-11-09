@@ -14,6 +14,8 @@ const PRICE_ROW: Array<[string, string]> = [
   ["DCF", "dcf_upside"], ["P/FFO", "p_ffo"], ["Rentabilidad por dividendo", "dividend_yield"],
   ["P/B frente al ROE", "pb_roe"], ["EV/Ventas", "ev_sales"], ["Regla de 40", "rule_of_40"],
   ["Valoración", "cat_valoracion"],
+  // cierre de la 1.0: las cifras de la regla L1 (el único P/E del informe)
+  ["P/E normalizado", "pe_l1"], ["P/E (12 meses)", "pe_l1"],
 ];
 
 const known = (k: string | undefined): string | undefined => (k && DEFINITIONS[k] ? k : undefined);

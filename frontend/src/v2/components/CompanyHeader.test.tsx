@@ -44,8 +44,9 @@ describe("CompanyHeader (AAPL)", () => {
   it("el precio y la consistencia explican su cálculo con datos del motor", () => {
     render(<ScoreBreakdowns analysis={AAPL as unknown as StockAnalysis} />);
     const price = screen.getByTestId("breakdown-price");
-    expect(price.textContent).toContain("Bloque de múltiplos");
-    expect(price.textContent).toContain("−5");
+    // cierre de la 1.0: la nota de precio se explica con las cifras de la regla L1, sin el bloque del sistema anterior
+    expect(price.textContent).toContain("Mediana de tecnología");
+    expect(price.textContent).not.toContain("Bloque de múltiplos");
     expect(screen.getByTestId("breakdown-confidence").querySelectorAll("li[data-cat]").length).toBe(2);
   });
   it("la conclusión del motor está siempre visible en la cabecera", () => {
@@ -59,10 +60,10 @@ describe("CompanyHeader (AAPL)", () => {
       .map((li) => (li.textContent ?? "").replace("?", ""));
     // F8 · E10: Altman por SIC (3571, Z original), zona segura con su peso de +3: solidez 10 → 16
     expect(mini("desglose-quality")).toEqual(["Solidez financiera16 / 20", "Rentabilidad20 / 20", "Calidad de ganancias20 / 20", "Crecimiento10 / 20"]);
-    expect(mini("desglose-price").join(" | ")).toContain("Bloque de múltiplos · 5 múltiplos−5");
+    expect(mini("desglose-price").join(" | ")).toBe("P/E (12 meses)38.8x | Mediana de tecnología30.8x | Tercio del universomás alto");
     expect(mini("desglose-confidence").length).toBe(2);
     // el total, las notas y el título del cálculo, en la tarjeta; ningún botón «Ver detalle» ni tarjeta que se abra
-    expect(screen.getByTestId("desglose-price").textContent).toContain("Valoración");
+    expect(screen.getByTestId("desglose-price").textContent).not.toContain("Valoración 3");
     expect(screen.getByTestId("desglose-price").textContent).toContain(PRICE_NOTE);
     expect(screen.getByTestId("desglose-quality").textContent).toContain("Cómo sale el");
     expect(screen.queryByRole("button", { name: /Ver detalle/ })).toBeNull();
@@ -87,10 +88,12 @@ describe("CompanyHeader (AAPL)", () => {
     expect(screen.getByRole("button", { name: "Qué es Calidad de ganancias" })).toBeTruthy();
   });
 
-  it("V7 · P3 (M5): con el DCF directo descartado puntúa el inverso, con su propia definición (DOW; F8 · E8)", () => {
+  // cierre de la 1.0: el DCF inverso ya no forma la nota de precio; sus filas son las de la regla L1, con su definición
+  it("V7 · P3 (M5): las filas del precio llevan la definición del P/E de la regla L1, no la del DCF (DOW)", () => {
     render(<ScoreBreakdowns analysis={DOW as unknown as StockAnalysis} />);
     const tips = Array.from(screen.getByTestId("desglose-price").querySelectorAll(".bd [data-tip]")).map((b) => b.getAttribute("data-tip"));
-    expect(tips).toContain("reverse_dcf");
+    expect(tips).toContain("pe_l1");
+    expect(tips).not.toContain("reverse_dcf");
   });
 
   it("V7 · P1: «?» en las tres puntuaciones; la compacta (V4b, la fija al bajar) es solo visual: sin «?» y oculta", () => {

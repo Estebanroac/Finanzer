@@ -502,6 +502,15 @@ def _leverage(ctx: Ctx):
                     f"{t.net_debt_ebitda_high:.0f}x el margen ante una caída de resultados o una subida de tipos se estrecha: "
                     "conviene vigilar la cobertura de intereses y el calendario de vencimientos.", w)
     if nde < t.net_debt_ebitda_low:
+        # Cierre de la 1.0 (9-nov-2026, CIEN): con el D/E por encima del umbral de su sector (el mismo que puntúa
+        # «Deuda elevada» en Solidez), «Deuda baja» chocaba con la tabla. La deuda es baja frente al EBITDA, no frente
+        # al patrimonio: se dice así.
+        de = ctx.g("debt_to_equity")
+        if de is not None and de > t.debt_equity_high and not ctx.na("debt_to_equity"):
+            return _sig("strength", "Solidez financiera", f"Deuda neta baja frente al EBITDA — {nde:.1f}x",
+                        f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA: el negocio la cubre con holgura. "
+                        f"Frente al patrimonio, en cambio, la deuda es alta (D/E {de:.2f}x, por encima del umbral de su "
+                        f"sector, {t.debt_equity_high:.1f}x).", T["w_low"])
         return _sig("strength", "Solidez financiera", f"Deuda baja — {nde:.1f}x EBITDA",
                     f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, un nivel cómodo que deja holgura financiera y "
                     "capacidad de maniobra ante imprevistos.", T["w_low"])

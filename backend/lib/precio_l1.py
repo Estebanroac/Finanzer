@@ -525,7 +525,9 @@ def price(market_cap: Optional[float], inp: Optional[Dict[str, Any]], gics_secto
     out.update(sector_median=med, relative=rel, percentile=pct, score=score, score_raw=score, level=level,
                level_raw=level, reason=None if level else "referencia del universo sin cortes", cuts=cuts)
     from verdict import border
-    out["border"] = border(score, BANDS, LABELS)
+    from display import L1_LEVEL_SHORT
+    # el vecino se nombra como se muestra («baja / en línea / alta»), no con la clave interna (atractivo…)
+    out["border"] = border(score, BANDS, [L1_LEVEL_SHORT[x] for x in LABELS])
     return out
 
 

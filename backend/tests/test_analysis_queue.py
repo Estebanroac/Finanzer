@@ -108,7 +108,7 @@ def test_states_and_shared_summary(q):
     wait(lambda: AQ.peek("MSFT")["status"] == "listo")
     s = AQ.peek("MSFT")["summary"]
     assert s["symbol"] == "MSFT" and set(s["quality"]) == {"score", "level"} and set(s["price_score"]) == {"score",
-                                                                                                           "level"}
+                                                                                                           "level", "reason"}
     assert AQ.cached("MSFT") is s
     assert AQ.request("MSFT", AQ.USER)["status"] == "listo" and eng.calls == ["MSFT"]   # la misma caché para todos
 

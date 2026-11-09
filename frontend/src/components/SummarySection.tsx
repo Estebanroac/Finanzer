@@ -92,6 +92,15 @@ function CompRow({ r, signedMax }: { r: CompositionRow; signedMax: number }) {
       </div>
     );
   }
+  if (r.kind === "fact") {    // cierre de la 1.0: las cifras de la regla L1, sin barra
+    return (
+      <div className="fz-comp-row">
+        <span className="fz-comp-l">{r.label}</span>
+        <span />
+        <span className="fz-comp-n">{r.text}</span>
+      </div>
+    );
+  }
   if (r.kind === "signed") {
     const v = r.value;
     return (

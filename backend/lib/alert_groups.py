@@ -34,6 +34,14 @@ _BALANCE = re.compile(
     r"negativo|Apalancamiento elevado|Destruye valor|Margen (neto|operativo)( normalizado)? negativo|"
     r"ROE( normalizado)? negativo)")
 EXTREME_LEVEL = "muy exigente"
+# Cierre de la 1.0 (9-nov-2026): un solo P/E en el informe, el normalizado de doce meses de la regla L1. Las señales del
+# P/E del motor anterior («Valoración exigente — P/E normalizado 50.4x», «Cotiza con descuento — P/E 12.0x»…) lo
+# repetían con otra cifra: no entran en la lectura de valoración.
+_PE_SIGNAL = re.compile(r" — P/E\b")
+
+
+def is_pe_signal(x: Dict[str, Any]) -> bool:
+    return is_valuation(x) and bool(_PE_SIGNAL.search(x.get("reason") or ""))
 
 
 def is_balance(x: Dict[str, Any]) -> bool:
@@ -54,11 +62,10 @@ def extreme_valuation(reading: Optional[Dict[str, Any]]) -> Optional[Dict[str, A
     if r.get("level") != EXTREME_LEVEL:
         return None
     C = cfg("thresholds.alerts.valuation_extreme")
-    score = r.get("score")
-    sc = f" (puntuación {score}/100)" if score is not None else ""
+    # Cierre de la 1.0 (9-nov-2026): sin número de 0 a 100; la única nota de precio es la de la regla L1
     return {"category": "Valoración", "reason": "Valoración extrema según múltiplos y DCF",
             "detail": (f"La valoración por múltiplos y DCF, que se calcula como lectura, la sitúa en "
-                       f"«{EXTREME_LEVEL}»{sc}. En la prueba hacia atrás ({C['sample']}), el {_pct(C['rate'])} de las "
+                       f"«{EXTREME_LEVEL}». En la prueba hacia atrás ({C['sample']}), el {_pct(C['rate'])} de las "
                        f"que estaban en ese nivel ({C['hits']} de {C['n']}) cayó un {C['drawdown'] * 100:.0f} % o más "
                        f"en algún momento de los {C['horizon_months']} meses siguientes, frente al "
                        f"{_pct(C['base_rate'])} del resto; en el corte de 2024 cayeron menos que el resto. No anticipa "
@@ -77,6 +84,8 @@ def regroup(alerts: Optional[Dict[str, Any]], price: Optional[Dict[str, Any]]) -
             (out["valuation"] if is_valuation(x) else out["balance"] if is_balance(x) else out["warnings"]).append(x)
     out["valuation"] += [x for x in out["strengths"] if is_valuation(x)]
     out["strengths"] = [x for x in out["strengths"] if not is_valuation(x)]
+    if (price or {}).get("rule") == "L1":
+        out["valuation"] = [x for x in out["valuation"] if not is_pe_signal(x)]
     ext = extreme_valuation((price or {}).get("valuation_reading"))
     if ext:
         out["valuation"].insert(0, ext)        # versión 1.0: la primera de la lectura de valoración, sin color
