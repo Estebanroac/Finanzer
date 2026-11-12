@@ -76,6 +76,7 @@ def _yahoo_down(p: fb._Patcher) -> None:
     p.set(yfinance, "Ticker", _DownTicker)
     p.set(price_history, "FETCHER", lambda *a, **kw: _raise("Yahoo"))
     p.set(trending, "FETCH_BATCH", lambda *a, **kw: _raise("Yahoo"))
+    p.set(trending, "FETCH_QUOTES", lambda *a, **kw: _raise("Yahoo"))     # cintillo en vivo
     p.set(search_v2, "YAHOO_QUOTES", lambda *a, **kw: _raise("Yahoo"))
     p.set(sparklines, "FETCH", lambda *a, **kw: _raise("Yahoo"))          # P8: mini-gráficas del cintillo
 

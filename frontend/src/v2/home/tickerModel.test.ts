@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { TrendingData, TrendingItem } from "@/lib/api";
-import { changeLabel, contextLine, engineLine, mergeTrending, sectorChips, selectedItems, shortDate, shownChange } from "./tickerModel";
+import { changeLabel, contextLine, engineLine, everyLabel, mergeTrending, sectorChips, selectedItems, shortDate, shownChange } from "./tickerModel";
 
 const it_ = (symbol: string, change = 0.01, engine: TrendingItem["engine"] = null): TrendingItem =>
   ({ symbol, name: symbol, price: 10, change_pct: change, dollar_volume: 1, engine });
@@ -38,13 +38,28 @@ describe("cintillo (P8)", () => {
   });
   it("línea de contexto: la lista en el periodo, entre qué sesiones, el universo y cuántos; si la lista es corta, por qué", () => {
     expect(contextLine(data, { kind: "list", key: "losers" }, "6M", 1)).toBe(
-      "Bajan más en 6 meses (del 16-abr-2026 al 16-oct-2026) · universo: S&P 500 y ADR principales · 1 valor · " +
+      "Bajan más en 6 meses (del 16-abr-2026 al 16-oct-2026) · al cierre del 16-oct-2026 · universo: S&P 500 y ADR principales · 1 valor · " +
       "solo 1 valor del universo baja en 6 meses");
-    expect(contextLine(data, { kind: "list", key: "most_traded" }, "1D", 30)).toBe(
-      "Más negociadas en 1 día (del 15-oct-2026 al 16-oct-2026) · universo: S&P 500 y ADR principales · 30 valores");
+    expect(contextLine(data, { kind: "list", key: "most_traded" }, "1D", 30, 120)).toBe(
+      "Más negociadas en 1 día (del 15-oct-2026 al 16-oct-2026) · al cierre del 16-oct-2026; con la bolsa de Nueva York " +
+      "abierta se rehace cada 2 min · universo: S&P 500 y ADR principales · 30 valores");
     expect(contextLine(data, { kind: "sector", key: "Energy" }, "1M", 2)).toBe(
-      "Energía, las más negociadas del sector, en 1 mes (del 17-sep-2026 al 16-oct-2026) · universo: S&P 500 y ADR principales · 2 valores");
+      "Energía, las más negociadas del sector, en 1 mes (del 17-sep-2026 al 16-oct-2026) · al cierre del 16-oct-2026 · " +
+      "universo: S&P 500 y ADR principales · 2 valores");
     expect(shortDate("2026-01-05")).toBe("5-ene-2026");
+  });
+  it("cintillo en vivo: dice que es de hoy, a qué hora se actualizó y cada cuánto se rehace", () => {
+    const live: TrendingData = { ...data, session: "2026-10-19", live: { session: "2026-10-19", at: "2026-10-19T15:02:00Z", refresh_s: 120 },
+      periods: { ...data.periods, "1D": { ...data.periods["1D"], from: "2026-10-16", to: "2026-10-19" },
+        "1S": { ...data.periods["1S"], from: "2026-10-12", to: "2026-10-19" } } };
+    const clock = () => "11:02";
+    expect(contextLine(live, { kind: "list", key: "gainers" }, "1D", 30, 120, clock)).toBe(
+      "Suben más hoy, 19-oct-2026 (frente al cierre del 16-oct-2026) · en vivo: actualizado a las 11:02, se rehace cada 2 min " +
+      "con la bolsa de Nueva York abierta · universo: S&P 500 y ADR principales · 30 valores");
+    expect(contextLine(live, { kind: "list", key: "most_traded" }, "1S", 30, 120, clock)).toBe(
+      "Más negociadas en 1 semana (del 12-oct-2026 a hoy, 19-oct-2026) · en vivo: actualizado a las 11:02, se rehace cada 2 min " +
+      "con la bolsa de Nueva York abierta · universo: S&P 500 y ADR principales · 30 valores");
+    expect(everyLabel(45)).toBe("cada 45 s");
   });
   it("variación con flecha; la de la tarjeta es la de su lista (la que la ordena)", () => {
     expect(changeLabel(0.0043)).toMatchObject({ arrow: "▲", text: "0.43%" });

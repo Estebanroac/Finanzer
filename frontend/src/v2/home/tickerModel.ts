@@ -61,16 +61,44 @@ export function shortDate(iso: string): string {
 
 const periodLabel = (p: SparkPeriod) => SPARK_PERIODS.find((x) => x.key === p)?.label ?? p;
 
+/** «2026-11-12T18:52:18Z» → «13:52», en la hora de quien mira (la de su reloj). */
+export function clockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
+
+const S_PER_MIN = 60;
+
+/** «cada 2 min» (o «cada 45 s»). */
+export function everyLabel(seconds: number): string {
+  return seconds >= S_PER_MIN ? `cada ${Math.round(seconds / S_PER_MIN)} min` : `cada ${seconds} s`;
+}
+
 /** Línea de contexto bajo el cintillo: qué lista, en qué periodo y entre qué sesiones (las listas y las gráficas usan
- *  el mismo), el universo y cuántos valores; si «Suben más» o «Bajan más» no llegan, por qué. */
-export function contextLine(d: TrendingData, sel: Selection, period: SparkPeriod, count: number): string {
+ *  el mismo), de cuándo es el dato y cada cuánto se rehace, el universo y cuántos valores; si «Suben más» o «Bajan más»
+ *  no llegan, por qué. Cintillo en vivo (12-nov-2026): con la bolsa abierta, hasta el último precio («actualizado a las
+ *  13:52»); cerrada, al cierre de la última sesión. */
+export function contextLine(d: TrendingData, sel: Selection, period: SparkPeriod, count: number, refreshS?: number,
+  clock: (iso: string) => string = clockTime): string {
   const what = sel.kind === "list"
     ? DAY_LISTS.find((x) => x.key === sel.key)!.title
     : `${d.sector_status?.[period]?.[sel.key]?.label ?? sel.key}, las más negociadas del sector,`;
   const info = d.periods?.[period];
-  const span = info?.from ? ` (del ${shortDate(info.from)} al ${shortDate(info.to)})` : "";
+  const live = d.live ?? null;
+  const every = everyLabel(live?.refresh_s ?? refreshS ?? 0);
+  let span: string;
+  let when: string;
+  if (live && info?.to === live.session) {
+    span = period === "1D" && info.from
+      ? ` hoy, ${shortDate(live.session)} (frente al cierre del ${shortDate(info.from)})`
+      : ` en ${periodLabel(period)}${info.from ? ` (del ${shortDate(info.from)} a hoy, ${shortDate(live.session)})` : ""}`;
+    when = `en vivo: actualizado a las ${clock(live.at)}, se rehace ${every} con la bolsa de Nueva York abierta`;
+  } else {
+    span = ` en ${periodLabel(period)}${info?.from ? ` (del ${shortDate(info.from)} al ${shortDate(info.to)})` : ""}`;
+    when = `al cierre del ${shortDate(info?.to ?? d.session)}` +
+      (refreshS || live ? `; con la bolsa de Nueva York abierta se rehace ${every}` : "");
+  }
   const note = sel.kind === "list" && sel.key !== "most_traded" ? d.list_notes?.[period]?.[sel.key] : null;
-  return `${what} en ${periodLabel(period)}${span} · universo: S&P 500 y ADR principales · ` +
+  return `${what}${span} · ${when} · universo: S&P 500 y ADR principales · ` +
     `${count} valor${count === 1 ? "" : "es"}${note ? ` · ${note}` : ""}`;
 }
 

@@ -649,3 +649,87 @@ def test_main_starts_the_strip_at_boot_with_its_snapshot_file(fresh):
     main._trending_at_boot()
     backend = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     assert got == [os.path.join(backend, cfg("market.trending.snapshot_file")), "/disco/portada.json", None]
+
+
+# ── cintillo en vivo (12-nov-2026): con la bolsa abierta, las listas van hasta el último precio de la sesión ──
+LIVE_AT = dt.datetime(2026, 10, 19, 11, 0, tzinfo=trending.NY).timestamp()      # lunes, sesión posterior al viernes 16
+
+
+def _quote(sym, px, prev, vol, at=LIVE_AT):
+    return {"symbol": sym, "regularMarketPrice": px, "regularMarketPreviousClose": prev, "regularMarketVolume": vol,
+            "regularMarketTime": at, "marketState": "REGULAR"}
+
+
+def _closed(fresh):
+    fresh.setattr(trending, "_universe_symbols", lambda: list(SERIES))
+    return trending.compute(fetcher(frame(SERIES)))
+
+
+def test_market_open_window():
+    ny, f = trending.NY, trending.market_open
+    assert not f(dt.datetime(2026, 10, 19, 9, 29, tzinfo=ny))           # lunes antes de la apertura
+    assert f(dt.datetime(2026, 10, 19, 9, 30, tzinfo=ny))
+    assert f(dt.datetime(2026, 10, 19, 16, 29, tzinfo=ny))              # hasta que llega el cálculo del cierre
+    assert not f(dt.datetime(2026, 10, 19, 16, 30, tzinfo=ny))
+    assert not f(dt.datetime(2026, 10, 18, 12, 0, tzinfo=ny))           # domingo
+
+
+def test_live_overlay_ranks_the_session_against_the_previous_close(fresh):
+    d = _closed(fresh)
+    # hoy: AAA cae un 10 % (110 → 99), BBB sube un 25 % (40 → 50), CCC igual; BBB es la más negociada de hoy
+    q = [_quote("AAA", 99.0, 110.0, 1e6), _quote("BBB", 50.0, 40.0, 4e6), _quote("CCC", 21.0, 21.0, 1e5)]
+    L = trending.live_overlay(d, q)
+    assert L["session"] == "2026-10-19" and L["live"] == {"session": "2026-10-19", "at": "2026-10-19T15:00:00Z",
+                                                          "refresh_s": cfg("market.trending.live_refresh_s")}
+    day = L["lists"]["1D"]
+    assert [(x["symbol"], round(x["change_pct"], 4)) for x in day["gainers"]] == [("BBB", 0.25)]
+    assert [(x["symbol"], round(x["change_pct"], 4)) for x in day["losers"]] == [("AAA", -0.1)]
+    assert [x["symbol"] for x in day["most_traded"]] == ["BBB", "AAA", "CCC"]       # volumen en dólares de hoy
+    assert day["most_traded"][0]["price"] == 50.0
+    assert L["periods"]["1D"]["from"] == "2026-10-16" and L["periods"]["1D"]["to"] == "2026-10-19"
+    # periodos largos: la variación ajustada hasta el cierre encadenada con la de hoy (con una sesión más, 1S parte del
+    # día 12, el primero de la descarga: AAA 10 → 99)
+    assert round(L["changes"]["AAA"]["1S"], 4) == round(99 / 10 - 1, 4)
+    assert L["periods"]["1S"]["from"] == "2026-10-12"
+    assert "live_base" not in trending.with_engine(L)
+
+
+def test_live_overlay_ignores_quotes_of_the_closed_session(fresh):
+    d = _closed(fresh)
+    friday = dt.datetime(2026, 10, 16, 16, 0, tzinfo=trending.NY).timestamp()
+    assert trending.live_overlay(d, [_quote("AAA", 110.0, 100.0, 1e6, at=friday)]) is None     # preapertura, festivo
+    assert trending.live_overlay(d, []) is None
+
+
+def test_get_serves_the_live_lists_while_the_market_is_open(fresh):
+    fresh.setattr(trending, "_universe_symbols", lambda: list(SERIES))
+    fresh.setattr(trending, "FETCH_BATCH", fetcher(frame(SERIES)))
+    fresh.setattr(trending, "last_closed_session", lambda now=None: "2026-10-16")
+    is_open = {"v": False}
+    fresh.setattr(trending, "market_open", lambda now=None: is_open["v"])
+    asked = []
+    fresh.setattr(trending, "FETCH_QUOTES", lambda syms: asked.append(sorted(syms)) or [
+        _quote("AAA", 99.0, 110.0, 1e6), _quote("BBB", 50.0, 40.0, 4e6)])
+    _wait(lambda: trending.get()["status"] == "listo", timeout=SETTLE_S)
+    r = trending.get()
+    assert r["data"]["live"] is None and r["next_s"] is None and not asked     # cerrada: las del cierre, sin sondeo
+    is_open["v"] = True
+    fresh.setattr(trending, "FETCH_QUOTES", lambda syms: (time.sleep(0.3), asked.append(sorted(syms)))[1] or [
+        _quote("AAA", 99.0, 110.0, 1e6), _quote("BBB", 50.0, 40.0, 4e6)])
+    assert trending.get()["next_s"] == cfg("market.trending.poll_s")              # pidiéndolas: vuelve enseguida
+    _wait(lambda: trending.get()["data"]["live"] is not None, timeout=SETTLE_S)
+    r = trending.get(period="1D")
+    assert r["data"]["session"] == "2026-10-19"
+    # la siguiente pregunta, cuando toque la ronda siguiente (no 2 min después de esta)
+    assert cfg("market.trending.poll_s") <= r["next_s"] <= cfg("market.trending.live_refresh_s")
+    assert [x["symbol"] for x in r["data"]["lists"]["1D"]["gainers"]] == ["BBB"]
+    assert trending.change_of("AAA", "1D") == pytest.approx(-0.1)                    # la de la tarjeta y su gráfica
+    assert asked == [["AAA", "BBB", "CCC", "FFF"]]                                  # una sola petición por ronda
+    for _ in range(3):
+        trending.get()
+    assert len(asked) == 1                                                          # hasta pasados live_refresh_s
+    # llega el cálculo del cierre de esa sesión: se sirve el del cierre, no la capa en vivo
+    fresh.setattr(trending, "last_closed_session", lambda now=None: "2026-10-19")
+    with trending._lock:
+        trending._state["data"] = {**trending._state["data"], "session": "2026-10-19", "as_of": "otro"}
+    assert trending.get()["data"]["live"] is None

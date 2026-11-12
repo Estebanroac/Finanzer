@@ -92,3 +92,11 @@ def _no_logo_downloads(monkeypatch):
     import logos
     monkeypatch.setattr(logos, "FETCH", lambda s: None)
     logos.reset()
+
+
+@pytest.fixture(autouse=True)
+def _no_live_quotes(monkeypatch):
+    """Cintillo en vivo (lib/trending.py): en los tests, sin red ni cotizaciones de la sesión (las listas son las del
+    cierre); los que prueban la capa en vivo inyectan FETCH_QUOTES."""
+    import trending
+    monkeypatch.setattr(trending, "FETCH_QUOTES", lambda symbols: [])

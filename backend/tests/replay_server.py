@@ -73,6 +73,7 @@ def install(app_main, base, store):
     import capture_trending
     import trending
     trending.FETCH_BATCH = capture_trending.replay_fetcher()[0]
+    trending.FETCH_QUOTES = lambda symbols: []      # cintillo en vivo: el replay es una sesión cerrada
     # Rediseño E4: el buscador de /v2 con las respuestas de Yahoo capturadas (tests/fixtures/search/quotes.json).
     import capture_search
     import search_v2

@@ -962,6 +962,9 @@ export interface TrendingData {
   count: number;
   failed_batches: number;
   note: string | null;
+  /** Cintillo en vivo (12-nov-2026): con la bolsa de Nueva York abierta, las listas van hasta el último precio de la
+   *  sesión (`at`, UTC) y se rehacen cada `refresh_s`; null (o ausente en datos antiguos): las del cierre de `session`. */
+  live?: { session: string; at: string; refresh_s: number } | null;
 }
 
 /** GET /api/v2/trending (backend/lib/trending.py): la última lista buena; "calculando" tras un reinicio. Repetir cada
@@ -972,4 +975,8 @@ export interface TrendingResponse {
   refreshing: boolean;
   reason: string | null;
   poll_s: number;
+  /** Cintillo en vivo: volver a preguntar pasados estos segundos (bolsa abierta o listas en vivo); null, no hace falta. */
+  next_s?: number | null;
+  /** Cada cuánto se rehacen las listas con la bolsa abierta (backend [trending] live_refresh_s). */
+  live_refresh_s?: number;
 }

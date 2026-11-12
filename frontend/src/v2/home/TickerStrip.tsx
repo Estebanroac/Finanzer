@@ -115,6 +115,7 @@ export default function TickerStrip() {
         setFailed(null);
         if (r.data) { const d = r.data; setLastGood((prev) => mergeTrending(prev, d)); }
         if (shouldPoll(r)) later(r.poll_s * MS);
+        else if (r.next_s) later(r.next_s * MS);          // cintillo en vivo: al ritmo con que el servidor rehace las listas
       }).catch((e: Error) => {
         if (isAbort(e)) return;
         setFailed(e.message);
@@ -170,6 +171,21 @@ export default function TickerStrip() {
     }, 0);
     return () => { clearTimeout(t); ctl.abort(); };
   }, [symbolsKey, shownPeriod, sparks]);
+
+  // Cintillo en vivo: cuando el servidor rehace las listas con precios nuevos, las mini-gráficas de las tarjetas que se
+  // ven se piden otra vez (sin vaciarlas: la nueva sustituye a la anterior al llegar).
+  const liveAt = data?.live?.at ?? null;
+  const seenAt = useRef<string | null>(null);
+  useEffect(() => {
+    if (!liveAt || !symbolsKey) return;
+    if (seenAt.current === null || seenAt.current === liveAt) { seenAt.current = liveAt; return; }
+    seenAt.current = liveAt;
+    const ctl = new AbortController();
+    fetchSparklines(symbolsKey.split(","), shownPeriod, ctl.signal).then((r) => {
+      setSparks((prev) => ({ ...prev, [shownPeriod]: { ...(prev[shownPeriod] ?? {}), ...r.items } }));
+    }).catch(() => { /* se quedan las de antes */ });
+    return () => ctl.abort();
+  }, [liveAt, symbolsKey, shownPeriod]);
 
   // Portada rápida: la vista inicial que llegó del servidor (listas de 1D y mini-gráficas de «Más negociadas») se guarda
   // en este navegador; saveHome no la cambia por una más antigua.
@@ -365,7 +381,7 @@ export default function TickerStrip() {
               Guardado en este navegador: {cachedLabel(cached.data.as_of, new Date())}. Actualizando…
             </p>
           )}
-          <p className="muted" data-testid="ticker-context">{contextLine(data, sel, shownPeriod, items.length)}
+          <p className="muted" data-testid="ticker-context">{contextLine(data, sel, shownPeriod, items.length, resp?.live_refresh_s)}
             {sparkErr && <> · sin mini-gráficas ahora ({sparkErr})</>}{data.note && <> · aviso: {data.note}</>}</p>
         </div>
       )}

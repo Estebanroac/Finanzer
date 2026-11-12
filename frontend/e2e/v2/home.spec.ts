@@ -28,7 +28,7 @@ test("portada: titular, buscador y cintillo con mini-gráficas y el motor en cac
   expect(await noEngine.evaluate((e) => getComputedStyle(e).fontSize))
     .toBe(await aapl.locator(".tk-eng").evaluate((e) => getComputedStyle(e).fontSize));
   await expect(page.getByTestId("ticker-context")).toHaveText(
-    /^Más negociadas en 1 día \(del 15-oct-2026 al 16-oct-2026\) · universo: S&P 500 y ADR principales · 30 valores$/);
+    /^Más negociadas en 1 día \(del 15-oct-2026 al 16-oct-2026\) · al cierre del 16-oct-2026; con la bolsa de Nueva York abierta se rehace cada 2 min · universo: S&P 500 y ADR principales · 30 valores$/);
   await expect(page.getByRole("heading", { name: "Datos oficiales de la SEC" })).toBeVisible();
 });
 

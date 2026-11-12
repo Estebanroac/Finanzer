@@ -518,6 +518,18 @@ min_price = 1.0            # excluye cotizaciones residuales
 refresh_after_close_min = 30   # la sesión se da por cerrada 30 min después del cierre de NY (16:00 ET)
 close_hour_et = 16             # cierre de la sesión regular de NY (hora de Nueva York)
 retry_after_s = 600            # tras un cálculo fallido, no se reintenta antes de 10 min (respeto a Yahoo)
+# Cintillo en vivo (12-nov-2026): con la bolsa de Nueva York abierta, las listas no esperan al cierre. Cada
+# `live_refresh_s` se piden las cotizaciones del universo a Yahoo (v7/finance/quote, `live_batch` símbolos por petición:
+# 543 valores en 3 peticiones y < 1 s) y se recalculan las listas de cada periodo hasta el último precio de la sesión
+# (1D: frente al cierre anterior). Se piden de `open_hour_et`:`open_minute_et` al cierre más `refresh_after_close_min`
+# (entonces llega el cálculo del cierre). Una cotización que no es de una sesión posterior a la del cálculo diario
+# (preapertura, festivo) no cambia nada.
+open_hour_et = 9
+open_minute_et = 30
+live_refresh_s = 120
+live_batch = 200
+live_quote_url = "https://query1.finance.yahoo.com/v7/finance/quote"
+live_timeout_s = 20.0
 # Rediseño E4: tras calcular las listas, sus símbolos sin resumen en caché se analizan en la cola compartida con
 # prioridad `prewarm` (de uno en uno y solo sin usuarios esperando), como mucho estos al día (Render gratuito).
 prewarm_max = 30

@@ -38,15 +38,24 @@ días pedidos ni mejora con más hilos), así que el servidor:
     caliente. Un archivo de otra config o ilegible se ignora;
   · al publicar las listas descarga las mini-gráficas de la vista inicial (1D, «Más negociadas»), con la misma petición
     que hará la web (la descarga en marcha se comparte en la puerta de lib/sparklines.py).
+
+Cintillo en vivo (12-nov-2026): antes, con la bolsa abierta el cintillo enseñaba las listas del cierre anterior («Suben
+más» con valores que ese día bajaban) junto a mini-gráficas de 1D que sí eran de la sesión. Ahora, de la apertura de
+Nueva York al cierre más `refresh_after_close_min` (`market_open`), cada `live_refresh_s` se piden las cotizaciones del
+universo (v7/finance/quote: 3 peticiones, < 1 s) y `live_overlay` rehace las listas de cada periodo hasta el último
+precio, con la base compacta que guarda el cálculo diario (`live_base`: sin series). La respuesta trae `live` (la hora
+del precio y el ritmo) y `next_s` (cuándo volver a preguntar); al llegar el cálculo del cierre, se sirve ese.
 """
 import contextlib
 import datetime as _dt
 import hashlib
 import json
 import logging
+import math
 import os
 import threading
 import time
+from bisect import bisect_right
 from collections.abc import Mapping
 from typing import Any, Callable, Dict, List, Optional
 from zoneinfo import ZoneInfo
@@ -94,7 +103,8 @@ def reset() -> None:
         _limits.update(cfg("market.trending"))
         _state.clear()
         _state.update(data=None, checked_for=None, computing=False, error=None, failed_at=None,
-                      prewarm_day=None, prewarmed=set())
+                      prewarm_day=None, prewarmed=set(),
+                      live=None, live_asked=None, live_fetching=False, live_error=None)
 
 
 reset()
@@ -171,12 +181,12 @@ def compute(fetch_batch: Callable[[List[str]], Any], session: Optional[str] = No
     calendar = sorted({d for f in frames.values() for d in f["dates"] if d <= last})
     per: Dict[str, List[Dict[str, Any]]] = {p: [] for p in PC.periods()}
     changes: Dict[str, Dict[str, Optional[float]]] = {}
+    # cintillo en vivo: con una sesión más (la de hoy), cada periodo parte una sesión después
+    live_ref = {p: (calendar[-PC.sessions(p)] if len(calendar) >= PC.sessions(p) else None) for p in per}
+    base_live: Dict[str, Dict[str, Any]] = {}
     for sym, f in frames.items():
         if f["dates"][-1] != last or f["close"][-1] < T["min_price"]:
             continue
-        row = universe.get(sym) or {}
-        base = {"symbol": sym, "name": row.get("display_name") or row.get("name"), "price": f["close"][-1],
-                "sector": row.get("gics_sector")}
         changes[sym] = {}
         for p in per:
             ch = PC.change(f["dates"], f["adj"], calendar, p)
@@ -185,13 +195,48 @@ def compute(fetch_batch: Callable[[List[str]], Any], session: Optional[str] = No
                 continue
             ref = PC.reference_date(calendar, p)
             dv = [c * v for d, c, v in zip(f["dates"], f["close"], f["vol"]) if d > ref and v is not None]
-            per[p].append({**base, "change_pct": ch, "dollar_volume": sum(dv) / len(dv) if dv else None})
+            per[p].append({**_card(sym, f["close"][-1]), "change_pct": ch,
+                           "dollar_volume": sum(dv) / len(dv) if dv else None})
+        base_live[sym] = _live_base(f, live_ref)
     if not any(per.values()):
         raise TrendingUnavailable("Yahoo no devolvió dos sesiones de cotización del universo")
-    n = T["top_n"]
+    out = _publish(per, {p: PC.reference_date(calendar, p) for p in per}, last)
     meta = universe.meta()
     stale = (meta.get("date") is None or (_dt.date.today() - _dt.date.fromisoformat(meta["date"])).days
              > cfg("market.universe.max_age_days"))
+    return {"session": last, "as_of": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            **out, "changes": changes, "live_base": base_live, "live_ref": live_ref, "live": None,
+            # `count`: valores con variación de 1 día (los que entran en las listas del día)
+            "universe_date": meta.get("date"), "count": len(per[PC.periods()[0]]), "failed_batches": failed,
+            "note": f"universo del {meta.get('date')}" if stale else None}
+
+
+def _card(sym: str, price: float) -> Dict[str, Any]:
+    row = universe.get(sym) or {}
+    return {"symbol": sym, "name": row.get("display_name") or row.get("name"), "price": price,
+            "sector": row.get("gics_sector")}
+
+
+def _live_base(f: Dict[str, list], live_ref: Dict[str, Optional[str]]) -> Dict[str, Any]:
+    """Lo que necesita la capa en vivo de un valor, sin guardar su serie: el último cierre (y el ajustado), el ajustado
+    de la sesión de partida de cada periodo con una sesión más, y la suma y el número de volúmenes en dólares de las
+    sesiones cerradas que siguen a esa partida."""
+    out: Dict[str, Any] = {"close": f["close"][-1], "adj": f["adj"][-1], "ref": {}, "dv": {}}
+    for p, ref in live_ref.items():
+        if ref is None:
+            out["ref"][p] = None
+            continue
+        i = bisect_right(f["dates"], ref) - 1
+        out["ref"][p] = f["adj"][i] if i >= 0 and f["adj"][i] and f["adj"][i] > 0 else None
+        dv = [c * v for d, c, v in zip(f["dates"], f["close"], f["vol"]) if d > ref and v is not None]
+        out["dv"][p] = [sum(dv), len(dv)]
+    return out
+
+
+def _publish(per: Dict[str, List[Dict[str, Any]]], start: Dict[str, Optional[str]], last: str) -> Dict[str, Any]:
+    """Las tres listas, sus notas y las de sector de cada periodo, a partir de las filas con variación de cada uno."""
+    T = _limits
+    n = T["top_n"]
     lists, notes, sectors, status, periods = {}, {}, {}, {}, {}
     for p, items in per.items():
         label = cfg("market.sparklines.periods")[p]["label"]
@@ -204,14 +249,8 @@ def compute(fetch_batch: Callable[[List[str]], Any], session: Optional[str] = No
                     "losers": _short_note(len(down), n, "bajan", label)}
         sec = _sectors(by_volume, n)
         sectors[p], status[p] = sec["sectors"], sec["sector_status"]
-        periods[p] = {"label": label, "sessions": PC.sessions(p), "from": PC.reference_date(calendar, p),
-                      "to": last, "count": len(items)}
-    return {"session": last, "as_of": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "periods": periods, "lists": lists, "list_notes": notes, "sectors": sectors, "sector_status": status,
-            "changes": changes,
-            # `count`: valores con variación de 1 día (los que entran en las listas del día)
-            "universe_date": meta.get("date"), "count": len(per[PC.periods()[0]]), "failed_batches": failed,
-            "note": f"universo del {meta.get('date')}" if stale else None}
+        periods[p] = {"label": label, "sessions": PC.sessions(p), "from": start[p], "to": last, "count": len(items)}
+    return {"periods": periods, "lists": lists, "list_notes": notes, "sectors": sectors, "sector_status": status}
 
 
 def _short_note(found: int, n: int, verb: str, label: str) -> Optional[str]:
@@ -293,7 +332,8 @@ def with_engine(data: Dict[str, Any]) -> Dict[str, Any]:
         return engines[sym]
     def cards(groups):        # P8b: {periodo: {lista o sector: [tarjetas]}}
         return {p: {k: [{**x, "engine": eng(x["symbol"])} for x in v] for k, v in g.items()} for p, g in groups.items()}
-    out = {k: v for k, v in data.items() if k != "changes"}      # las variaciones van a las mini-gráficas, no aquí
+    # las variaciones van a las mini-gráficas y la base compacta a la capa en vivo, no aquí
+    out = {k: v for k, v in data.items() if k not in _PRIVATE}
     out["lists"] = cards(data["lists"])
     if "sectors" in data:
         out["sectors"] = cards(data["sectors"])
@@ -302,10 +342,131 @@ def with_engine(data: Dict[str, Any]) -> Dict[str, Any]:
 
 def change_of(symbol: str, period: str) -> Optional[float]:
     """P8b: la variación del periodo con la que se ordenan las listas (la de la tarjeta y la de su mini-gráfica). None
-    si aún no hay listas o el valor no tiene variación en ese periodo."""
+    si aún no hay listas o el valor no tiene variación en ese periodo. Con la sesión en vivo, la de las listas en vivo."""
     with _lock:
-        data = _state["data"]
+        data = _shown()
     return ((data or {}).get("changes") or {}).get(symbol, {}).get(period)
+
+
+# ── cintillo en vivo (12-nov-2026) ──
+_PRIVATE = ("changes", "live_base", "live_ref", "_from")
+
+
+def yahoo_quotes(symbols: List[str]) -> List[Dict[str, Any]]:
+    """Las cotizaciones de la sesión de `symbols` en Yahoo (v7/finance/quote, con la sesión y el crumb de yfinance), en
+    peticiones de `live_batch` símbolos."""
+    from yfinance.data import YfData
+    T, yd, out = _limits, YfData(), []
+    fields = "regularMarketPrice,regularMarketPreviousClose,regularMarketVolume,regularMarketTime,marketState"
+    for i in range(0, len(symbols), T["live_batch"]):
+        resp = yd.get_raw_json(T["live_quote_url"], params={"symbols": ",".join(symbols[i:i + T["live_batch"]]),
+                                                            "fields": fields}, timeout=T["live_timeout_s"])
+        out += ((resp or {}).get("quoteResponse") or {}).get("result") or []
+    return out
+
+
+FETCH_QUOTES: Callable[[List[str]], List[Dict[str, Any]]] = yahoo_quotes
+
+
+def market_open(now: Optional[_dt.datetime] = None) -> bool:
+    """¿Se piden cotizaciones en vivo? De lunes a viernes, de la apertura de Nueva York al cierre más
+    `refresh_after_close_min` (entonces llega el cálculo del cierre). Sin festivos: un festivo, Yahoo devuelve la
+    sesión anterior y `live_overlay` no cambia nada."""
+    T = _limits
+    now = (now or _dt.datetime.now(NY)).astimezone(NY)
+    if now.weekday() > _FRIDAY:
+        return False
+    start = now.replace(hour=T["open_hour_et"], minute=T["open_minute_et"], second=0, microsecond=0)
+    end = now.replace(hour=T["close_hour_et"], minute=0, second=0, microsecond=0) + \
+        _dt.timedelta(minutes=T["refresh_after_close_min"])
+    return start <= now < end
+
+
+def _iso_utc(ts: float) -> str:
+    return _dt.datetime.fromtimestamp(ts, _dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def live_overlay(data: Dict[str, Any], quotes: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Las listas de cada periodo hasta el último precio de una sesión posterior a la del cálculo diario: 1D frente al
+    cierre anterior (el de Yahoo, el que muestra cualquier cotización), y los demás encadenando la variación ajustada
+    hasta el último cierre con la de hoy. «Más negociadas» y los sectores, con el volumen de hoy hasta ahora. None si
+    ninguna cotización es de una sesión posterior (preapertura, festivo) o falta la base."""
+    base, live_ref = data.get("live_base"), data.get("live_ref")
+    if not base or not live_ref:
+        return None
+    T = _limits
+    qs = [q for q in quotes if q.get("symbol") in base and isinstance(q.get("regularMarketTime"), (int, float))]
+    if not qs:
+        return None
+    at = max(q["regularMarketTime"] for q in qs)
+    session = _dt.datetime.fromtimestamp(at, NY).date().isoformat()
+    if session <= data["session"]:
+        return None
+    one_day = PC.periods()[0]
+    per: Dict[str, List[Dict[str, Any]]] = {p: [] for p in PC.periods()}
+    changes: Dict[str, Dict[str, Optional[float]]] = {}
+    for q in qs:
+        sym, b = q["symbol"], base[q["symbol"]]
+        px, prev, vol = q.get("regularMarketPrice"), q.get("regularMarketPreviousClose"), q.get("regularMarketVolume")
+        if _dt.datetime.fromtimestamp(q["regularMarketTime"], NY).date().isoformat() != session:
+            continue                                  # sin operaciones hoy (suspendido): fuera de las listas en vivo
+        if not isinstance(px, (int, float)) or px < T["min_price"] or not b["close"]:
+            continue
+        today_dv = px * vol if isinstance(vol, (int, float)) and vol >= 0 else None
+        changes[sym] = {}
+        for p in per:
+            if p == one_day:
+                ch = px / prev - 1 if isinstance(prev, (int, float)) and prev > 0 else None
+            else:
+                ref = b["ref"].get(p)
+                ch = b["adj"] / ref * (px / b["close"]) - 1 if ref else None
+            changes[sym][p] = ch
+            if ch is None:
+                continue
+            s_, n_ = b["dv"].get(p) or [0.0, 0]
+            if today_dv is not None:
+                s_, n_ = s_ + today_dv, n_ + 1
+            per[p].append({**_card(sym, px), "change_pct": ch, "dollar_volume": s_ / n_ if n_ else None})
+    if not any(per.values()):
+        return None
+    start = {p: (data["session"] if p == one_day else live_ref.get(p)) for p in per}
+    return {**data, **_publish(per, start, session), "session": session, "changes": changes,
+            "count": len(per[one_day]),
+            "live": {"session": session, "at": _iso_utc(at), "refresh_s": T["live_refresh_s"]}}
+
+
+def _shown() -> Optional[Dict[str, Any]]:
+    """Lo que se sirve (con `_lock`): las listas en vivo si son de una sesión posterior a la del cálculo diario; si no,
+    las del cálculo diario."""
+    data, live = _state["data"], _state["live"]
+    if live is not None and data is not None and live["session"] > data["session"] \
+            and live.get("_from") == data.get("as_of"):
+        return live
+    return data
+
+
+def _run_live(generation: int) -> None:
+    try:
+        with _lock:
+            data = _state["data"]
+        quotes = FETCH_QUOTES(list((data or {}).get("live_base") or {}))
+        live = live_overlay(data, quotes) if data else None
+        with _lock:
+            if generation != _generation[0]:
+                return
+            if live is not None:
+                live["_from"] = data.get("as_of")
+                _state["live"] = live
+            _state["live_error"] = None
+    except Exception as e:  # noqa: BLE001 — Yahoo falla de muchas maneras: se sirven las listas que había
+        logger.warning("[TRENDING] cotizaciones en vivo: %s", type(e).__name__)
+        with _lock:
+            if generation == _generation[0]:
+                _state["live_error"] = type(e).__name__
+    finally:
+        with _lock:
+            if generation == _generation[0]:
+                _state["live_fetching"] = False
 
 
 def _first_view(data: Dict[str, Any]) -> List[str]:
@@ -424,10 +585,23 @@ def get(period: Optional[str] = None) -> Dict[str, Any]:
         if s["checked_for"] != expected and not s["computing"] and not recent_fail:
             s["computing"] = True
             threading.Thread(target=_run, args=(expected, _generation[0]), name="trending", daemon=True).start()
-        data, computing, error = s["data"], s["computing"], s["error"]
-    poll = {"poll_s": _limits["poll_s"]}
+        # cintillo en vivo: con la bolsa abierta, cotizaciones nuevas cada `live_refresh_s` (una petición a la vez)
+        is_open = market_open()
+        now = time.monotonic()
+        if is_open and s["data"] is not None and not s["live_fetching"] and \
+                (s["live_asked"] is None or now - s["live_asked"] >= _limits["live_refresh_s"]):
+            s.update(live_fetching=True, live_asked=now)
+            threading.Thread(target=_run_live, args=(_generation[0],), name="trending-live", daemon=True).start()
+        base, data, computing, error = s["data"], _shown(), s["computing"], s["error"]
+        # la portada vuelve a preguntar cuando habrá cotizaciones nuevas: en `poll_s` si se están pidiendo ahora; si
+        # no, cuando toque la siguiente ronda (sin esto, su ritmo y el del servidor se sumaban: hasta 4 min de retraso)
+        next_s = None
+        if is_open or (data is not None and data.get("live")):
+            due = _limits["live_refresh_s"] - (now - s["live_asked"]) if s["live_asked"] is not None else 0
+            next_s = _limits["poll_s"] if s["live_fetching"] else max(_limits["poll_s"], math.ceil(due))
+    poll = {"poll_s": _limits["poll_s"], "next_s": next_s, "live_refresh_s": _limits["live_refresh_s"]}
     if data is not None:
-        prewarm(data)
+        prewarm(base)                                # el precalentado sigue las listas del cierre: no cambia cada 2 min
         out = with_engine(only_period(data, period) if period else data)
         return {"status": "listo", "data": out, "refreshing": computing, "reason": None, **poll}
     if computing:
